@@ -1,63 +1,41 @@
-import { useContext } from "react";
-import { FlatList, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import PlaceholderCard from "../components/PlaceholderCard";
-import { AuthContext } from '../context/AuthContext';
-import { useDares } from "../hooks/useDares";
+import { listDares } from "../lib/firebase";
 
 export default function HomeFeedScreen({ navigation }) {
-  const { dares, loading } = useDares();
-  const { user, logout } = useContext(AuthContext);
+  const [dares, setDares] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <Image source={{ uri: user.avatar }} style={styles.avatar} />
-          <Text style={styles.logo}>▲</Text>
-          <View style={styles.stones}>
-            <Text style={styles.stonesText}>∘ {user.stones}</Text>
-          </View>
-          <TouchableOpacity onPress={logout}>
-            <Text style={styles.logout}>Logout</Text>
-          </TouchableOpacity>
-        </View>
-        {/* Rest of the screen */}
-        <View style={styles.content}>
-          <Text style={styles.feedHeader}>Home Feed</Text>
-          <Text>Loading…</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
+  useEffect(() => {
+    async function fetchDares() {
+      try {
+        const res = await listDares();
+        setDares(res.data);
+      } catch (e) {
+        console.error("Failed to fetch dares:", e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchDares();
+  }, []);
+
+  if (loading) return <ActivityIndicator style={{ flex: 1 }} />;
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Image source={{ uri: user.avatar }} style={styles.avatar} />
-        <Text style={styles.logo}>▲</Text>
-        <View style={styles.stones}>
-          <Text style={styles.stonesText}>∘ {user.stones}</Text>
-        </View>
-        <TouchableOpacity onPress={logout}>
-          <Text style={styles.logout}>Logout</Text>
-        </TouchableOpacity>
-      </View>
-      {/* Rest of the screen */}
-      <View style={styles.content}>
-        <Text style={styles.feedHeader}>Home Feed</Text>
-
-        <FlatList
-          data={dares}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <TouchableOpacity onPress={() => navigation.navigate("DareDetails", { dareId: item.id })}>
-              <PlaceholderCard title={item.title} subtitle={`+${item.reward} Stone 🪨`} />
-            </TouchableOpacity>
-          )}
-          contentContainerStyle={{ paddingBottom: 20 }}
-        />
-      </View>
-    </SafeAreaView>
+    <View style={styles.container}>
+      <Text style={styles.header}>Home Feed</Text>
+      <FlatList
+        data={dares}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <TouchableOpacity onPress={() => navigation.navigate("DareDetails", { dare: item })}>
+            <PlaceholderCard title={item.title} subtitle={`+${item.rewardStone} Stone 🪨`} />
+          </TouchableOpacity>
+        )}
+      />
+    </View>
   );
 }
 
