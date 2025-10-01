@@ -1,4 +1,4 @@
-import { completeTwitterAuth, fetchFollowers, fetchTwitterUser, getStoredAuthTokens } from '@/src/lib/twitter';
+import { completeTwitterAuth, fetchFollowers, fetchTwitterUser } from '@/src/lib/twitter';
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
@@ -10,33 +10,48 @@ import {
   View
 } from 'react-native';
 
+const mockFriends = [
+  { id: 1, username: '@winterguy', avatar: '🥶' },
+  { id: 2, username: '@smilingguy', avatar: '😊' },
+  { id: 3, username: '@gradguy', avatar: '🎓' },
+  { id: 4, username: '@foodguy', avatar: '🍔' },
+];
+
 export default function CreateChallengeScreen() {
-  const [friends, setFriends] = useState([]);
+  const [friends, setFriends] = useState(mockFriends); // Start with mock data, replace with real data if available
+  const [user, setUser] = useState(null);
 
   // Fetch user followers when component mounts (if user is logged in)
   useEffect(() => {
-    const loadFollowers = async () => {
+    const loadUserData = async () => {
       try {
-        // Try to get stored tokens
-        const tokens = await getStoredAuthTokens();
-        if (!tokens?.accessToken) return;
+        // For now, try to fetch from stored tokens and get followers
+        const tokens = await import('@/src/lib/twitter').then(module => module.getStoredAuthTokens());
+        if (!tokens?.accessToken) {
+          setFriends(mockFriends); // Show mock data if not logged in
+          return;
+        }
 
-        // Get current user to fetch their followers
-        const user = await fetchTwitterUser(tokens.accessToken);
-        if (user?.id) {
-          const followers = await fetchFollowers(tokens.accessToken, user.id, 10);
-          setFriends(followers.map((follower: any) => ({
+        const currentUser = await fetchTwitterUser(tokens.accessToken);
+        setUser(currentUser);
+
+        if (currentUser?.id) {
+          const followers = await fetchFollowers(tokens.accessToken, currentUser.id, 10);
+          const formattedFriends = followers.map((follower: any) => ({
             id: follower.id,
             username: `@${follower.username}`,
+            name: follower.name,
             avatar: follower.profile_image_url || '👤' // Use emoji placeholder if no image
-          })));
+          }));
+          setFriends(formattedFriends.length > 0 ? formattedFriends : mockFriends);
         }
       } catch (error) {
-        console.error('Failed to load followers:', error);
+        console.error('Failed to load user data:', error);
+        setFriends(mockFriends);
       }
     };
 
-    loadFollowers();
+    loadUserData();
   }, []);
   const handleAchievements = () => {
     // Navigate to achievements - would need router here

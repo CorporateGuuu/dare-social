@@ -1,14 +1,14 @@
-import React from 'react';
-import { createStackNavigator } from '@react-navigation/native-stack';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from "@expo/vector-icons";
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createStackNavigator } from '@react-navigation/native-stack';
 
 // Screens
-import OnboardingScreen from '../screens/OnboardingScreen';
-import HomeFeedScreen from '../screens/HomeFeedScreen';
-import DareDetailsScreen from '../screens/DareDetailsScreen';
+import ChallengesScreen from '../screens/ChallengesScreen';
 import CompleteDareScreen from '../screens/CompleteDareScreen';
+import DareDetailsScreen from '../screens/DareDetailsScreen';
+import HomeFeedScreen from '../screens/HomeFeedScreen';
 import LeaderboardScreen from '../screens/LeaderboardScreen';
+import OnboardingScreen from '../screens/OnboardingScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import WalletScreen from '../screens/WalletScreen';
 
@@ -48,6 +48,7 @@ const RootNavigator = () => {
       <Stack.Screen name="Main" component={MainTabs} options={{ headerShown: false }} />
       <Stack.Screen name="DareDetails" component={DareDetailsScreen} />
       <Stack.Screen name="CompleteDare" component={CompleteDareScreen} />
+      <Stack.Screen name="Challenges" component={ChallengesScreen} />
     </Stack.Navigator>
   );
 };

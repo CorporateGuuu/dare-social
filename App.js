@@ -4,6 +4,7 @@ import { Text, View } from "react-native";
 import { AuthContext, AuthProvider } from "./src/context/AuthContext";
 import AchievementsScreen from "./src/screens/AchievementsScreen";
 import ChallengesScreen from "./src/screens/ChallengesScreen";
+import CreateChallengeFormScreen from "./src/screens/CreateChallengeFormScreen";
 import LoginScreen from "./src/screens/LoginScreen";
 // Import other screens: AchievementsScreen, ChallengesScreen, etc.
 
@@ -27,6 +28,7 @@ function App() {
                   <>
                     <Stack.Screen name="Achievements" component={AchievementsScreen} />
                     <Stack.Screen name="Challenges" component={ChallengesScreen} />
+                    <Stack.Screen name="CreateChallengeForm" component={CreateChallengeFormScreen} />
                     {/* Add other screens */}
                   </>
                 ) : (
