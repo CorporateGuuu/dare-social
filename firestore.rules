@@ -1,0 +1,27 @@
+// firestore.rules
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    match /users/{uid} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn() && request.auth.uid == uid;
+    }
+
+    match /dares/{dareId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      // Only creator can edit non-protected fields; status/reward should be server-managed
+      allow update: if isSignedIn() && request.resource.data.diff(resource.data).changedKeys().hasOnly(["title","description","visibility","mediaUrl"]) && request.auth.uid == resource.data.creatorId;
+    }
+
+    match /transactions/{txId} {
+      allow read: if isSignedIn() && request.auth.uid == resource.data.userId;
+      allow write: if false; // server-only
+    }
+  }
+}

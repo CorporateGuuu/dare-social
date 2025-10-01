@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "dare-social",
-    "slug": "dare-social",
+    "name": "corporateguuu-app",
+    "slug": "corporateguuu-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "daresocial",
+    "scheme": "corporateguuuapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -26,6 +26,7 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      "expo-router",
       [
         "expo-splash-screen",
         {
@@ -38,6 +39,22 @@
           }
         }
       ]
-    ]
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "2696b4a7-e1cd-4c98-90ff-3b60cfc5d986"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/2696b4a7-e1cd-4c98-90ff-3b60cfc5d986"
+    }
   }
 }
