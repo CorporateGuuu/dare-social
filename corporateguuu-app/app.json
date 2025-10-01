@@ -38,6 +38,15 @@
             "backgroundColor": "#000000"
           }
         }
+      ],
+      [
+        "expo-auth-session",
+        {
+          "schemes": [
+            "corporateguuuapp",
+            "corporateguuuapp://auth"
+          ]
+        }
       ]
     ],
     "experiments": {

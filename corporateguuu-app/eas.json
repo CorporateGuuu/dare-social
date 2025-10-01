@@ -2,6 +2,14 @@
   "build": {
     "preview": {
       "distribution": "internal"
+    },
+    "production": {
+      "android": {
+        "package": "com.yourcompany.corporateguuuapp"
+      },
+      "ios": {
+        "bundleIdentifier": "com.yourcompany.corporateguuuapp"
+      }
     }
   }
 }
