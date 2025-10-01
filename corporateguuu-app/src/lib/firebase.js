@@ -104,6 +104,20 @@ export async function createDare({ title, description, rewardStone, creatorId })
   return docRef.id;
 }
 
+export async function rewardUser(uid, rewardStone) {
+  try {
+    const res = await updateStoneBalance({
+      userId: uid,
+      amount: rewardStone,
+      type: "earn",
+      description: "Completed dare"
+    });
+    console.log("New balance:", res.data.newBalance);
+  } catch (e) {
+    console.error("Transaction failed", e.message);
+  }
+}
+
 /* --------------------
    STORAGE HELPERS
 -------------------- */
@@ -129,3 +143,5 @@ export function callSubmitProof(payload) {
 export function callCompleteDare(payload) {
   return httpsCallable(functions, "completeDare")(payload);
 }
+
+export const updateStoneBalance = httpsCallable(functions, "updateStoneBalance");

@@ -107,3 +107,54 @@ exports.calculateLeaderboard = functions.https.onCall(async (data, context) => {
 
   return { success: true, weekId };
 });
+
+// 6. Update Stone Balance and Record Transaction
+exports.updateStoneBalance = functions.https.onCall(async ({ userId, amount, type, description }, context) => {
+  if (!userId || !amount || !type) {
+    throw new functions.https.HttpsError("invalid-argument", "userId, amount, and type are required");
+  }
+
+  const userRef = db.collection("users").doc(userId);
+  const userSnap = await userRef.get();
+
+  if (!userSnap.exists) {
+    throw new functions.https.HttpsError("not-found", "User not found");
+  }
+
+  const currentBalance = userSnap.data().stoneBalance || 0;
+  let newBalance = currentBalance;
+
+  if (type === "earn") {
+    newBalance += amount;
+  } else if (type === "spend") {
+    if (currentBalance < amount) {
+      throw new functions.https.HttpsError("failed-precondition", "Insufficient balance");
+    }
+    newBalance -= amount;
+  } else {
+    throw new functions.https.HttpsError("invalid-argument", "Invalid transaction type");
+  }
+
+  // Start a batch write
+  const batch = db.batch();
+
+  // Update balance
+  batch.update(userRef, { stoneBalance: newBalance });
+
+  // Add transaction record
+  const txRef = userRef.collection("transactions").doc();
+  batch.set(txRef, {
+    type,
+    amount,
+    description: description || "",
+    createdAt: admin.firestore.FieldValue.serverTimestamp()
+  });
+
+  await batch.commit();
+
+  return {
+    success: true,
+    newBalance,
+    transactionId: txRef.id,
+  };
+});
