@@ -29,6 +29,7 @@ const CreateChallengeFormScreen = ({ isVisible, onClose }) => {
       expiration: expirationDate.toISOString(),
       creator: user.username,
       payouts: isGroup ? payouts.reduce((acc, pos, idx) => ({ ...acc, [pos]: data[pos] || '' }), {}) : {},
+      votingWindow: parseInt(data.votingWindow), // Add voting window in hours
     };
     console.log('Challenge Data:', challengeData);
     setTimeout(() => {
@@ -153,6 +154,27 @@ const CreateChallengeFormScreen = ({ isVisible, onClose }) => {
               }}
             />
           )}
+
+          <Controller
+            control={control}
+            name="votingWindow"
+            rules={{
+              required: true,
+              pattern: /^[0-9]+$/,
+              min: { value: 1, message: 'Minimum 1 hour' }
+            }}
+            render={({ field: { onChange, value } }) => (
+              <TextInput
+                style={styles.input}
+                placeholder="Voting Window (hours)"
+                placeholderTextColor="#888"
+                keyboardType="numeric"
+                value={value}
+                onChangeText={onChange}
+              />
+            )}
+          />
+          {errors.votingWindow && <Text style={styles.error}>{errors.votingWindow.message || 'Valid voting window required'}</Text>}
 
           {isGroup && (
             <View style={styles.section}>

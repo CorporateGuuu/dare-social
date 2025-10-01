@@ -9,7 +9,14 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.corporateguuu.corporateguuuapp",
+      "buildNumber": "1.0.0",
+      "requireFullScreen": true,
+      "infoPlist": {
+        "UIBackgroundModes": ["fetch", "remote-notification", "audio"],
+        "NSMicrophoneUsageDescription": "This app needs microphone access to record voice messages."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -18,6 +25,9 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
+      "package": "com.corporateguuu.corporateguuuapp",
+      "versionCode": 1,
+      "permissions": ["POST_NOTIFICATIONS", "VIBRATE", "RECORD_AUDIO"],
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
@@ -37,6 +47,20 @@
           "dark": {
             "backgroundColor": "#000000"
           }
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#00FF00",
+          "sounds": ["./assets/images/notification.wav"]
+        }
+      ],
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone"
         }
       ]
     ],

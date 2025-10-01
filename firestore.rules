@@ -27,5 +27,14 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow write: if false; // server-only
     }
+
+    match /challenges/{challengeId} {
+      allow update: if request.auth != null && request.resource.data.typing[request.auth.uid] != null;
+    }
+
+    match /challenges/{challengeId}/messages/{messageId} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn() && request.auth.uid in resource.data.read;
+    }
   }
 }
