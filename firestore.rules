@@ -22,5 +22,10 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow write: if false; // server-only
     }
+
+    match /leaderboard/{weekId} {
+      allow read: if isSignedIn();
+      allow write: if false; // server-only
+    }
   }
 }
