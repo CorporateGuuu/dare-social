@@ -22,11 +22,19 @@ export default function WalletScreen() {
         <Text style={styles.feedHeader}>Wallet</Text>
         <View style={styles.balance}>
           <Text style={styles.balanceText}>Stone Balance</Text>
-          <Text style={styles.amount}>120 🪨</Text>
+          <Text style={styles.amount}>{user.stones} 🪨</Text>
+          <Text style={styles.levelText}>Level {user.level} • {user.xp} XP</Text>
         </View>
 
+        <View style={styles.streakInfo}>
+          <Text style={styles.streakText}>{user.currentStreak} Day Streak</Text>
+        </View>
+
+        {/* Placeholder transactions - in real app, fetch from user.transactions */}
         <View style={styles.txCard}><Text>+20 — Completed Dare — Today</Text></View>
-        <View style={styles.txCard}><Text>+10 — Daily Streak — Yesterday</Text></View>
+        {user.currentStreak > 0 && (
+          <View style={styles.txCard}><Text>+5 — Daily Streak ({user.currentStreak} days)</Text></View>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -45,5 +53,8 @@ const styles = StyleSheet.create({
   balance: { backgroundColor: "#111", borderRadius: 12, padding: 16, marginBottom: 16 },
   balanceText: { color: "#aaa" },
   amount: { color: "#fff", fontSize: 28, fontWeight: "800" },
+  levelText: { color: "#aaa", fontSize: 14, marginTop: 8 },
+  streakInfo: { alignItems: 'center', marginBottom: 16 },
+  streakText: { fontSize: 16, fontWeight: '500', color: '#333' },
   txCard: { backgroundColor: "#f4f4f4", borderRadius: 12, padding: 12, marginBottom: 10 },
 });

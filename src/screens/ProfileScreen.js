@@ -21,7 +21,7 @@ export default function ProfileScreen() {
       <View style={styles.content}>
         <Image source={{ uri: user.avatar }} style={styles.realAvatar} />
         <Text style={styles.name}>{user.username || '@you'}</Text>
-        <Text style={styles.meta}>Stone: {user.stones} 🪨  •  Wins: 5  •  Streak: 3</Text>
+        <Text style={styles.meta}>Stone: {user.stones} 🪨  •  Level: {user.level}  •  Streak: {user.currentStreak}</Text>
 
         <View style={styles.block}><Text>My Dares (placeholder)</Text></View>
         <View style={styles.block}><Text>Activity (placeholder)</Text></View>

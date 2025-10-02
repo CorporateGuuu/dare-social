@@ -75,20 +75,54 @@ exports.updateUserStats = functions.https.onCall(async ({ uid, stonesToAdd, dare
   // Only allow updating own stats or from admin/server contexts
 
   const userRef = db.collection("users").doc(uid);
+
+  const updates = {};
+  let newBadges = [];
+
   await db.runTransaction(async (transaction) => {
     const userDoc = await transaction.get(userRef);
     if (!userDoc.exists) {
       throw new functions.https.HttpsError("not-found", "User not found");
     }
-    const currentBalance = userDoc.data().stoneBalance || 0;
-    const currentCompleted = userDoc.data().totalDaresCompleted || 0;
 
-    transaction.update(userRef, {
-      stoneBalance: currentBalance + stonesToAdd,
-      totalDaresCompleted: currentCompleted + daresCompleted
-    });
+    const userData = userDoc.data();
+    const currentBalance = userData.stoneBalance || 0;
+    const currentCompleted = userData.totalDaresCompleted || 0;
+    const existingBadges = userData.badges || [];
+
+    const newBalance = currentBalance + stonesToAdd;
+    const newCompleted = currentCompleted + daresCompleted;
+
+    // Calculate XP and level from stone balance
+    const xp = newBalance;
+    const level = Math.floor(Math.sqrt(xp / 10)) + 1; // Simple level calculation
+
+    updates.stoneBalance = newBalance;
+    updates.totalDaresCompleted = newCompleted;
+    updates.xp = xp;
+    updates.level = level;
+
+    // Award badges for milestones
+    const milestones = [1, 5, 10, 25, 50, 100];
+    if (daresCompleted > 0) {
+      milestones.forEach(milestone => {
+        if (newCompleted >= milestone && !existingBadges.includes(`${milestone}_dares`)) {
+          newBadges.push(`${milestone}_dares`);
+        }
+      });
+    }
+
+    if (newBadges.length > 0) {
+      updates.badges = existingBadges.concat(newBadges);
+    }
+
+    transaction.update(userRef, updates);
   });
-  return { success: true };
+
+  return {
+    success: true,
+    newBadges,
+  };
 });
 
 // 5. Calculate and Update Leaderboard
@@ -193,47 +227,145 @@ exports.updateStoneBalance = functions.https.onCall(async ({ userId, amount, typ
   }
 
   const userRef = db.collection("users").doc(userId);
-  const userSnap = await userRef.get();
-
-  if (!userSnap.exists) {
-    throw new functions.https.HttpsError("not-found", "User not found");
-  }
-
-  const currentBalance = userSnap.data().stoneBalance || 0;
-  let newBalance = currentBalance;
-
-  if (type === "earn") {
-    newBalance += amount;
-  } else if (type === "spend") {
-    if (currentBalance < amount) {
-      throw new functions.https.HttpsError("failed-precondition", "Insufficient balance");
-    }
-    newBalance -= amount;
-  } else {
-    throw new functions.https.HttpsError("invalid-argument", "Invalid transaction type");
-  }
-
-  // Start a batch write
-  const batch = db.batch();
-
-  // Update balance
-  batch.update(userRef, { stoneBalance: newBalance });
+  const newStats = await updateUserStatsInternal(userId, {
+    stonesToAdd: type === "earn" ? amount : -amount,
+    daresCompleted: 0
+  });
 
   // Add transaction record
   const txRef = userRef.collection("transactions").doc();
-  batch.set(txRef, {
+  await txRef.set({
     type,
     amount,
     description: description || "",
     createdAt: admin.firestore.FieldValue.serverTimestamp()
   });
 
-  await batch.commit();
+  return {
+    success: true,
+    newBalance: newStats.newBalance,
+    transactionId: txRef.id,
+  };
+});
+
+// Helper function to update stats internally
+async function updateUserStatsInternal(uid, { stonesToAdd, daresCompleted }) {
+  const userRef = db.collection("users").doc(uid);
+
+  const updates = {};
+  let newBadges = [];
+
+  const userDoc = await userRef.get();
+  if (!userDoc.exists) {
+    throw new Error("User not found");
+  }
+
+  const userData = userDoc.data();
+  const currentBalance = userData.stoneBalance || 0;
+  const currentCompleted = userData.totalDaresCompleted || 0;
+  const existingBadges = userData.badges || [];
+
+  const newBalance = currentBalance + stonesToAdd;
+  const newCompleted = currentCompleted + daresCompleted;
+
+  // Calculate XP and level from stone balance
+  const xp = newBalance;
+  const level = Math.floor(Math.sqrt(xp / 10)) + 1;
+
+  updates.stoneBalance = newBalance;
+  updates.totalDaresCompleted = newCompleted;
+  updates.xp = xp;
+  updates.level = level;
+
+  // Award badges for milestones
+  const milestones = [1, 5, 10, 25, 50, 100];
+  if (daresCompleted > 0) {
+    milestones.forEach(milestone => {
+      if (newCompleted >= milestone && !existingBadges.includes(`${milestone}_dares`)) {
+        newBadges.push(`${milestone}_dares`);
+      }
+    });
+  }
+
+  if (newBadges.length > 0) {
+    updates.badges = existingBadges.concat(newBadges);
+  }
+
+  await userRef.update(updates);
+
+  return {
+    newBalance,
+    newCompleted,
+    xp,
+    level,
+    newBadges,
+  };
+}
+
+// 9. Update Daily Streak
+exports.updateDailyStreak = functions.https.onCall(async (data, context) => {
+  const uid = context.auth?.uid;
+  if (!uid) throw new functions.https.HttpsError("unauthenticated", "Login required");
+
+  const userRef = db.collection("users").doc(uid);
+  const now = new Date();
+  const todayString = now.toISOString().split('T')[0]; // YYYY-MM-DD
+
+  const updates = {};
+  let streakReward = 0;
+
+  await db.runTransaction(async (transaction) => {
+    const userDoc = await transaction.get(userRef);
+    const userData = userDoc.data();
+    const lastLogin = userData.lastLoginDate;
+    const currentStreak = userData.currentStreak || 0;
+    let newStreak = 1;
+
+    if (lastLogin) {
+      const lastLoginDate = new Date(lastLogin);
+      const lastLoginString = lastLoginDate.toISOString().split('T')[0];
+      const daysDiff = Math.floor((now - lastLoginDate) / (1000 * 60 * 60 * 24));
+
+      if (lastLoginString === todayString) {
+        // Already logged in today, no change
+        return { success: true, streak: currentStreak };
+      } else if (daysDiff === 1) {
+        // Next day, increment streak
+        newStreak = currentStreak + 1;
+        // Award streak reward for every 7 days
+        if (newStreak % 7 === 0) {
+          streakReward = 5; // 5 Stones for weekly streak
+        }
+      }
+      // Else, lost streak, newStreak = 1
+    }
+
+    updates.lastLoginDate = todayString;
+    updates.currentStreak = newStreak;
+
+    if (streakReward > 0) {
+      const stats = await updateUserStatsInternal(uid, { stonesToAdd: streakReward, daresCompleted: 0 });
+      updates.stoneBalance = stats.newBalance;
+      updates.xp = stats.xp;
+      updates.level = stats.level;
+
+      // Log transaction
+      const txRef = userRef.collection("transactions").doc();
+      transaction.set(txRef, {
+        type: "earn",
+        amount: streakReward,
+        description: `Daily streak reward: ${newStreak} days`,
+        createdAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+    }
+
+    transaction.update(userRef, updates);
+  });
 
   return {
     success: true,
-    newBalance,
-    transactionId: txRef.id,
+    streak: updates.currentStreak,
+    reward: streakReward,
   };
 });
 
