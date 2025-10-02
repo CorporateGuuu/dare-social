@@ -32,3 +32,5 @@ export async function ensureSignedIn() {
 export const listDares = httpsCallable(functions, "listDares");
 export const acceptDare = httpsCallable(functions, "acceptDare");
 export const submitProof = httpsCallable(functions, "submitProof");
+export const castVote = httpsCallable(functions, "castVote");
+export const completeDare = httpsCallable(functions, "completeDare");

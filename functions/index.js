@@ -36,9 +36,36 @@ exports.submitProof = functions.https.onCall(async ({ dareId, mediaUrl, caption 
     uid,
     mediaUrl,
     caption,
-    submittedAt: admin.firestore.FieldValue.serverTimestamp()
+    submittedAt: admin.firestore.FieldValue.serverTimestamp(),
+    votes: 0
   });
   return { success: true, message: "Proof submitted" };
+});
+
+// Vote on a Proof
+exports.castVote = functions.https.onCall(async ({ dareId, proofId }, context) => {
+  const voterId = context.auth?.uid;
+  if (!voterId) throw new functions.https.HttpsError("unauthenticated", "Login required");
+
+  const voteRef = db.collection("dares").doc(dareId).collection("proofs").doc(proofId).collection("votes").doc(voterId);
+  const proofRef = db.collection("dares").doc(dareId).collection("proofs").doc(proofId);
+
+  const existing = await voteRef.get();
+  if (existing.exists) {
+    throw new functions.https.HttpsError("already-exists", "User already voted");
+  }
+
+  const batch = db.batch();
+  batch.set(voteRef, {
+    value: 1,
+    votedAt: admin.firestore.FieldValue.serverTimestamp()
+  });
+  batch.update(proofRef, {
+    votes: admin.firestore.FieldValue.increment(1)
+  });
+  await batch.commit();
+
+  return { success: true };
 });
 
 // 4. Update User Stats (stoneBalance and totalDaresCompleted)
@@ -109,6 +136,57 @@ exports.calculateLeaderboard = functions.https.onCall(async (data, context) => {
 });
 
 // 6. Update Stone Balance and Record Transaction
+// 7. Complete Dare
+exports.completeDare = functions.https.onCall(async ({ dareId, winnerId, rewardStone }, context) => {
+  if (!dareId || !winnerId || !rewardStone) {
+    throw new functions.https.HttpsError("invalid-argument", "dareId, winnerId, and rewardStone are required");
+  }
+
+  const dareRef = db.collection("dares").doc(dareId);
+  const dareSnap = await dareRef.get();
+
+  if (!dareSnap.exists) {
+    throw new functions.https.HttpsError("not-found", "Dare not found");
+  }
+
+  // Mark dare as completed
+  await dareRef.update({
+    status: "completed",
+    winnerId,
+    completedAt: admin.firestore.FieldValue.serverTimestamp()
+  });
+
+  // Update winner balance and log transaction
+  const userRef = db.collection("users").doc(winnerId);
+  const userSnap = await userRef.get();
+
+  if (!userSnap.exists) {
+    throw new functions.https.HttpsError("not-found", "Winner not found");
+  }
+
+  const currentBalance = userSnap.data().stoneBalance || 0;
+  const newBalance = currentBalance + rewardStone;
+
+  const batch = db.batch();
+
+  // Update balance
+  batch.update(userRef, { stoneBalance: newBalance });
+
+  // Add transaction log
+  const txRef = userRef.collection("transactions").doc();
+  batch.set(txRef, {
+    type: "earn",
+    amount: rewardStone,
+    description: `Reward for completing dare ${dareId}`,
+    createdAt: admin.firestore.FieldValue.serverTimestamp()
+  });
+
+  await batch.commit();
+
+  return { success: true, winnerId, newBalance };
+});
+
+// 8. Update Stone Balance and Record Transaction
 exports.updateStoneBalance = functions.https.onCall(async ({ userId, amount, type, description }, context) => {
   if (!userId || !amount || !type) {
     throw new functions.https.HttpsError("invalid-argument", "userId, amount, and type are required");
@@ -158,3 +236,48 @@ exports.updateStoneBalance = functions.https.onCall(async ({ userId, amount, typ
     transactionId: txRef.id,
   };
 });
+
+// Auto-Select Winner (runs every 24 hours)
+exports.selectWinner = functions.pubsub
+  .schedule("every 24 hours")
+  .onRun(async () => {
+    const openDares = await db.collection("dares").where("status", "==", "active").get();
+
+    for (const dare of openDares.docs) {
+      const dareId = dare.id;
+      const proofsSnap = await db.collection("dares").doc(dareId).collection("proofs").orderBy("votes", "desc").get();
+
+      if (proofsSnap.empty) continue;
+
+      const topProof = proofsSnap.docs[0].data();
+      const winnerId = topProof.uid;
+      const rewardStone = dare.data().rewardStone || 0;
+
+      // Award the winner
+      const userRef = db.collection("users").doc(winnerId);
+      const batch = db.batch();
+
+      batch.update(userRef, {
+        stoneBalance: admin.firestore.FieldValue.increment(rewardStone)
+      });
+
+      const txRef = userRef.collection("transactions").doc();
+      batch.set(txRef, {
+        type: "earn",
+        amount: rewardStone,
+        description: `Reward for winning dare ${dareId}`,
+        createdAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+
+      batch.update(dare.ref, {
+        status: "completed",
+        winnerId,
+        completedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+
+      await batch.commit();
+      console.log(`Dare ${dareId} completed. Winner: ${winnerId}`);
+    }
+
+    return true;
+  });

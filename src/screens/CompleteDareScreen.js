@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { submitProof } from "../lib/firebase";
+import { completeDare, submitProof } from "../lib/firebase";
 
 export default function CompleteDareScreen({ navigation, route }) {
   const { dare } = route.params;
@@ -21,6 +21,15 @@ export default function CompleteDareScreen({ navigation, route }) {
       Alert.alert("Error", e.message ?? "Failed to submit proof");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function finalizeDare(dareId, winnerId, rewardStone) {
+    try {
+      const res = await completeDare({ dareId, winnerId, rewardStone });
+      Alert.alert(`Dare complete! Winner new balance: ${res.data.newBalance} 🪨`);
+    } catch (err) {
+      Alert.alert("Error: " + err.message);
     }
   }
 

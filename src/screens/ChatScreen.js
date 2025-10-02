@@ -1,6 +1,7 @@
 import * as AV from 'expo-av';
 import { useContext, useEffect, useRef, useState } from 'react';
-import { Animated, FlatList, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Animated, FlatList, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { OPENAI_API_KEY, WHISPER_API_URL } from '../constants/api';
 import { AuthContext } from '../context/AuthContext';
 import { useFadeIn, useSlideUp } from '../hooks/useAnimations';
 import { db } from '../lib/firebase';
@@ -15,8 +16,11 @@ const ChatScreen = ({ route }) => {
   const [typingUsers, setTypingUsers] = useState({});
   const [recording, setRecording] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const [progress, setProgress] = useState(new Animated.Value(0));
   const flatListRef = useRef();
   const typingTimeout = useRef(null);
+  const recordingInterval = useRef(null);
 
   useEffect(() => {
     const unsubscribe = db
@@ -39,10 +43,16 @@ const ChatScreen = ({ route }) => {
       .collection('messages')
       .orderBy('timestamp', 'desc')
       .limit(50)
-      .onSnapshot(snapshot => {
-        const msgList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      .onSnapshot(async snapshot => {
+        const msgList = await Promise.all(snapshot.docs.map(async doc => {
+          const data = { id: doc.id, ...doc.data() };
+          if (data.type === 'voice') {
+            const { durationMillis } = await getAudioDuration(data.uri);
+            return { ...data, duration: durationMillis / 1000 }; // Convert to seconds
+          }
+          return data;
+        }));
         setMessages(msgList.reverse());
-        // Mark messages as read for the current user
         msgList.forEach(async msg => {
           if (msg.userId !== user.id && !msg.read?.includes(user.id)) {
             const arrayUnion = (await import('firebase/firestore')).arrayUnion;
@@ -58,6 +68,7 @@ const ChatScreen = ({ route }) => {
       unsubscribe();
       unsubscribeMessages();
       if (typingTimeout.current) clearTimeout(typingTimeout.current);
+      if (recordingInterval.current) clearInterval(recordingInterval.current);
       if (recording) stopRecording();
     };
   }, [challengeId, user.id]);
@@ -93,6 +104,23 @@ const ChatScreen = ({ route }) => {
       await newRecording.startAsync();
       setRecording(newRecording);
       setIsRecording(true);
+      setRecordingDuration(0);
+      progress.setValue(0);
+      Animated.timing(progress, {
+        toValue: 1,
+        duration: 60000, // 60s max duration
+        useNativeDriver: false,
+      }).start();
+      recordingInterval.current = setInterval(() => {
+        setRecordingDuration(prev => {
+          const newDur = prev + 1;
+          if (newDur >= 60) {
+            stopRecording();
+            return 60;
+          }
+          return newDur;
+        });
+      }, 1000);
     } catch (err) {
       console.error('Failed to start recording', err);
     }
@@ -100,17 +128,30 @@ const ChatScreen = ({ route }) => {
 
   const stopRecording = async () => {
     if (!recording) return;
+    clearInterval(recordingInterval.current);
+    recordingInterval.current = null;
+    progress.stopAnimation();
     await recording.stopAndUnloadAsync();
     const uri = recording.getURI();
     setRecording(null);
     setIsRecording(false);
+    setRecordingDuration(0);
     sendVoiceMessage(uri);
   };
 
+  const getAudioDuration = async (uri) => {
+    const { sound } = await AV.Audio.Sound.createAsync({ uri });
+    const status = await sound.getStatusAsync();
+    await sound.unloadAsync();
+    return status;
+  };
+
   const sendVoiceMessage = async (uri) => {
+    const { durationMillis } = await getAudioDuration(uri);
     const messageData = {
       type: 'voice',
       uri: uri, // Mock; use Firebase Storage URL in production
+      duration: durationMillis / 1000, // Store in seconds
       userId: user.id,
       username: user.username,
       timestamp: new Date(),
@@ -149,6 +190,39 @@ const ChatScreen = ({ route }) => {
     await sound.playAsync();
   };
 
+  const transcribeVoiceMessage = async (messageId, uri) => {
+    // Update message with loading state
+    setMessages(prev => prev.map(msg => msg.id === messageId ? { ...msg, transcribing: true, transcription: null } : msg));
+
+    try {
+      const response = await fetch(WHISPER_API_URL, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          file: uri, // In production, upload to a server or use multipart/form-data
+          model: 'whisper-1',
+          language: 'en', // Default to English; make dynamic if needed
+          response_format: 'text',
+        }),
+      });
+
+      if (!response.ok) throw new Error(`API Error: ${response.status}`);
+      const transcription = await response.text();
+
+      // Update message with transcription
+      setMessages(prev => prev.map(msg => msg.id === messageId ? { ...msg, transcribing: false, transcription } : msg));
+
+      // Optional: Store in Firestore
+      // await db.collection('challenges').doc(challengeId).collection('messages').doc(messageId).update({ transcription });
+    } catch (error) {
+      console.error('Transcription failed:', error);
+      setMessages(prev => prev.map(msg => msg.id === messageId ? { ...msg, transcribing: false, transcription: 'Transcription failed' } : msg));
+    }
+  };
+
   const renderMessage = ({ item }) => {
     const isSentByMe = item.userId === user.id;
     const isReadByAll = item.read.length > 1 || (item.read.length === 1 && isSentByMe);
@@ -156,10 +230,23 @@ const ChatScreen = ({ route }) => {
     return (
       <View style={[styles.messageContainer, isSentByMe ? styles.sent : styles.received]}>
         {item.type === 'voice' ? (
-          <TouchableOpacity onPress={() => playVoiceMessage(item.uri)} style={styles.voiceContainer}>
-            <Text style={styles.voiceText}>🎙️ Play Voice Message</Text>
+          <View>
+            <TouchableOpacity onPress={() => playVoiceMessage(item.uri)} style={styles.voiceContainer}>
+              <Text style={styles.voiceText}>🎙️ Play Voice Message ({item.duration.toFixed(1)}s)</Text>
+            </TouchableOpacity>
+            {item.transcribing ? (
+              <ActivityIndicator size="small" color="#00FF00" style={styles.transcriptionSpinner} />
+            ) : item.transcription ? (
+              <TouchableOpacity onPress={() => transcribeVoiceMessage(item.id, item.uri)} style={styles.transcribeButton}>
+                <Text style={styles.transcriptionText}>{item.transcription}</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity onPress={() => transcribeVoiceMessage(item.id, item.uri)} style={styles.transcribeButton}>
+                <Text style={styles.transcribeText}>Transcribe to Text</Text>
+              </TouchableOpacity>
+            )}
             <Text style={styles.timestamp}>{new Date(item.timestamp).toLocaleTimeString()}</Text>
-          </TouchableOpacity>
+          </View>
         ) : (
           <Text style={styles.messageText}>{item.text}</Text>
         )}
@@ -174,6 +261,11 @@ const ChatScreen = ({ route }) => {
   const typingText = Object.keys(typingUsers).length > 0
     ? `${Object.keys(typingUsers).map(uid => `@${uid}`).join(', ')} is typing...`
     : '';
+
+  const progressWidth = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0%', '100%'],
+  });
 
   return (
     <SafeAreaView style={styles.container}>
@@ -196,8 +288,10 @@ const ChatScreen = ({ route }) => {
           style={[styles.recordButton, isRecording && styles.recording]}
           onPressIn={startRecording}
           onPressOut={stopRecording}
+          disabled={recordingDuration >= 60}
         >
-          <Text style={styles.recordText}>{isRecording ? 'Recording...' : '🎤'}</Text>
+          <Animated.View style={[styles.progressBar, { width: isRecording ? progressWidth : '0%' }]} />
+          <Text style={styles.recordText}>{isRecording ? `${recordingDuration}s` : '🎤'}</Text>
         </TouchableOpacity>
         <TextInput
           style={styles.input}
@@ -234,9 +328,22 @@ const styles = StyleSheet.create({
   typingIndicator: { color: '#00FF00', fontSize: 12, marginLeft: 10 },
   voiceContainer: { flexDirection: 'row', alignItems: 'center' },
   voiceText: { color: 'white', marginRight: 10 },
-  recordButton: { backgroundColor: '#3A3A3A', padding: 10, borderRadius: 20, marginRight: 10 },
+  recordButton: { backgroundColor: '#3A3A3A', padding: 10, borderRadius: 20, marginRight: 10, justifyContent: 'center', position: 'relative' },
   recording: { backgroundColor: '#FF0000' },
-  recordText: { color: 'white' },
+  recordText: { color: 'white', zIndex: 1, position: 'relative' },
+  progressBar: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    bottom: 0,
+    backgroundColor: '#00FF00',
+    borderRadius: 20,
+    zIndex: 0
+  },
+  transcribeButton: { marginTop: 5, padding: 5 },
+  transcribeText: { color: '#888', fontSize: 12 },
+  transcriptionText: { color: 'white', fontSize: 12, fontStyle: 'italic' },
+  transcriptionSpinner: { marginTop: 5 },
 });
 
 export default ChatScreen;

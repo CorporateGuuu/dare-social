@@ -2,7 +2,7 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{db}/documents {
-    
+
     function isSignedIn() {
       return request.auth != null;
     }
@@ -16,6 +16,18 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow create: if isSignedIn();
       allow update: if isSignedIn() && request.auth.uid == resource.data.creatorId;
+    }
+
+    match /dares/{dareId}/proofs/{proofId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.auth.uid == request.resource.data.uid;
+      allow update: if false; // server-only
+    }
+
+    match /dares/{dareId}/proofs/{proofId}/votes/{voterId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.auth.uid == voterId && !exists(/databases/$(db)/documents/dares/$(dareId)/proofs/$(proofId)/votes/$(request.auth.uid));
+      allow update: if false; // server-only
     }
 
     match /users/{uid}/transactions/{txId} {
@@ -33,8 +45,13 @@ service cloud.firestore {
     }
 
     match /challenges/{challengeId}/messages/{messageId} {
-      allow read: if isSignedIn();
-      allow create, update: if isSignedIn() && request.auth.uid in resource.data.read;
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+
+    match /challenges/{challengeId}/voices/{fileId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == request.resource.metadata.author;
     }
   }
 }
