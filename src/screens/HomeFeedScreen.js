@@ -57,12 +57,63 @@ export default function HomeFeedScreen({ navigation }) {
     }
   };
 
+  const bestFriends = [
+    { username: '@frankvecchie', avatar: 'https://example.com/frank.jpg', record: '10-5', stonesDiff: '+150 🪨' },
+    { username: '@mattbraun', avatar: 'https://example.com/matt.jpg', record: '8-7', stonesDiff: '+50 🪨' },
+    { username: '@alice_smith', avatar: 'https://example.com/alice.jpg', record: '12-3', stonesDiff: '+200 🪨' },
+    { username: '@bob_jones', avatar: 'https://example.com/bob.jpg', record: '9-6', stonesDiff: '-30 🪨' },
+  ];
+
+  const renderBestFriend = ({ item }) => (
+    <View style={styles.friendItem}>
+      <TouchableOpacity style={styles.createBetIcon} onPress={() => navigation.navigate('CreateChallenge', { opponent: item })}>
+        <Text style={styles.iconText}>+</Text>
+      </TouchableOpacity>
+      <Image source={{ uri: item.avatar }} style={styles.avatar} />
+      <Text style={styles.username} numberOfLines={1}>{item.username}</Text>
+      <Text style={styles.record}>{item.record}</Text>
+      <Text style={styles.stonesDiff}>{item.stonesDiff}</Text>
+    </View>
+  );
+
   if (loading) return <ActivityIndicator style={{ flex: 1 }} />;
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.logo}>▲</Text>
+      </View>
+      <View style={styles.bestFriendsSection}>
+        <Text style={styles.sectionTitle}>Best Friends</Text>
+        <FlatList
+          data={bestFriends}
+          renderItem={renderBestFriend}
+          keyExtractor={(item) => item.username}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.friendsList}
+        />
+      </View>
+      <View style={styles.statsSection}>
+        <Text style={styles.sectionTitle}>Statistics</Text>
+        <View style={styles.statsContainer}>
+          <View style={styles.statRow}>
+            <Text style={styles.statLabel}>Buying Power:</Text>
+            <Text style={styles.statValue}>500 🪨</Text>
+          </View>
+          <View style={styles.statRow}>
+            <Text style={styles.statLabel}>Frozen Assets:</Text>
+            <Text style={styles.statValue}>250 🪨</Text>
+          </View>
+          <View style={styles.statRow}>
+            <Text style={styles.statLabel}>Record:</Text>
+            <Text style={styles.statValue}>28-19</Text>
+          </View>
+          <View style={styles.statRow}>
+            <Text style={styles.statLabel}>Win Rate:</Text>
+            <Text style={styles.statValue}>60%</Text>
+          </View>
+        </View>
       </View>
       <TextInput
         style={styles.searchBar}
@@ -93,20 +144,20 @@ export default function HomeFeedScreen({ navigation }) {
               {item.type === 'ad' ? (
                 <View style={styles.headerRow}>
                   <TouchableOpacity onPress={() => navigation.navigate("Profile", { user: item.company })}>
-                    <Text style={styles.username}>{item.company.username}</Text>
+                    <Text style={styles.postUsername}>{item.company.username}</Text>
                   </TouchableOpacity>
                 </View>
               ) : (
                 <View style={styles.headerRow}>
                   {item.winner && (
                     <TouchableOpacity onPress={() => navigation.navigate("Profile", { user: item.winner })}>
-                      <Text style={styles.username}>{item.winner.username}</Text>
+                      <Text style={styles.postUsername}>{item.winner.username}</Text>
                     </TouchableOpacity>
                   )}
                   <Text style={styles.postHeader}> beat </Text>
                   {item.losers && item.losers.length > 0 && (
                     <TouchableOpacity onPress={() => navigation.navigate("Profile", { user: item.losers[0] })}>
-                      <Text style={styles.username}>{item.losers[0].username}</Text>
+                      <Text style={styles.postUsername}>{item.losers[0].username}</Text>
                     </TouchableOpacity>
                   )}
                   {(!item.losers || item.losers.length === 0) && <Text style={styles.postHeader}>loser</Text>}
@@ -158,11 +209,26 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff", padding: 16 },
   header: { flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: '#fff', marginBottom: 0 },
   logo: { flex: 1, textAlign: 'center', fontSize: 24 },
+  bestFriendsSection: { marginBottom: 16 },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 8 },
+  friendsList: { paddingVertical: 10 },
+  statsSection: { marginBottom: 16 },
+  statsContainer: { marginTop: 10 },
+  statRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
+  statLabel: { color: 'black', fontSize: 16 },
+  statValue: { color: 'black', fontSize: 16, fontWeight: 'bold' },
+  friendItem: { alignItems: 'center', marginRight: 15, width: 80 },
+  createBetIcon: { position: 'absolute', top: -5, right: -5, backgroundColor: 'blue', width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center', zIndex: 1 },
+  iconText: { color: 'white', fontSize: 12, fontWeight: 'bold' },
+  avatar: { width: 60, height: 60, borderRadius: 30, marginBottom: 5, marginTop: 10 },
+  username: { color: 'black', fontSize: 12, textAlign: 'center', marginBottom: 4 },
+  record: { color: 'black', fontSize: 10, textAlign: 'center', marginBottom: 2 },
+  stonesDiff: { color: 'black', fontSize: 10, fontWeight: 'bold', textAlign: 'center' },
   searchBar: { borderWidth: 1, borderColor: "#ccc", padding: 8, marginBottom: 16, textAlign: "center" },
   postContainer: { marginBottom: 16 },
   postHeader: { fontSize: 16, fontWeight: 'bold', marginBottom: 8, textAlign: 'center' },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-  username: { fontSize: 16, fontWeight: 'bold', color: 'blue', textDecorationLine: 'underline' },
+  postUsername: { fontSize: 16, fontWeight: 'bold', color: 'blue', textDecorationLine: 'underline' },
   mediaContainer: { marginBottom: 8, position: 'relative', alignSelf: 'center' },
   mediaDefault: { width: 231, height: 350, borderRadius: 8 },
   leftDiamonds: { position: 'absolute', left: -20, top: 0, height: 350, flexDirection: 'column', justifyContent: 'space-around' },

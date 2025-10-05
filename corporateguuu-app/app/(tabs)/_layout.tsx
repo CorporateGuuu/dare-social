@@ -18,7 +18,8 @@ export default function TabLayout() {
         tabBarStyle: {
           backgroundColor: Colors[colorScheme ?? 'light'].background,
         },
-      }}>
+      }}
+      initialRouteName="achievements">
       <Tabs.Screen
         name="achievements"
         options={{

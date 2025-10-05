@@ -1,6 +1,6 @@
 import React from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
-import { useRealtimeLeaderboard } from "../../../src/hooks/useRealtimeLeaderboard";
+import { useRealtimeLeaderboard } from "../../src/hooks/useRealtimeLeaderboard";
 
 interface User {
   uid: string;

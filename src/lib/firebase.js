@@ -39,3 +39,4 @@ export const completeDare = httpsCallable(functions, "completeDare");
 export const updateStoneBalance = httpsCallable(functions, "updateStoneBalance");
 export const updateDailyStreak = httpsCallable(functions, "updateDailyStreak");
 export const searchUsers = httpsCallable(functions, "searchUsers");
+export const getFrequentChallengers = httpsCallable(functions, "getFrequentChallengers");

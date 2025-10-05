@@ -1,5 +1,4 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import * as AV from 'expo-av';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
@@ -19,12 +18,6 @@ export default function RootLayout() {
     async function init() {
       const user = await ensureSignedIn();
       await registerUserProfile(user);
-
-      // Request microphone permission for voice messages
-      const { status } = await AV.requestPermissionsAsync();
-      if (status !== 'granted') {
-        alert('Microphone permission denied!');
-      }
     }
     init();
   }, []);

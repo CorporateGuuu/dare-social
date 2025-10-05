@@ -20,6 +20,7 @@ const mockFriends = [
 export default function CreateChallengeScreen() {
   const [friends, setFriends] = useState(mockFriends); // Start with mock data, replace with real data if available
   const [user, setUser] = useState(null);
+  const [hasCompletedChallenges, setHasCompletedChallenges] = useState(false);
 
   // Fetch user followers when component mounts (if user is logged in)
   useEffect(() => {
@@ -52,6 +53,18 @@ export default function CreateChallengeScreen() {
     };
 
     loadUserData();
+  }, []);
+
+  // Check for completed challenges to change achievements button
+  useEffect(() => {
+    const checkCompletedChallenges = async () => {
+      // For now, use a simple check - in a real implementation this would fetch from Firestore
+      // Assuming user has completed challenges (for demo purposes)
+      // TODO: Replace with actual Firestore query to check for completed, unclaimed challenges
+      setHasCompletedChallenges(true); // Set to true for demo - change based on real data
+    };
+
+    checkCompletedChallenges();
   }, []);
   const handleAchievements = () => {
     // Navigate to achievements - would need router here
@@ -87,6 +100,12 @@ export default function CreateChallengeScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
+        <View style={styles.logoAndProfile}>
+          <Text style={styles.logo}>Abstrac</Text>
+          <View style={styles.profilePic}>
+            <Text style={styles.profileEmoji}>👤</Text>
+          </View>
+        </View>
         <View style={styles.balanceContainer}>
           <View style={styles.stonesBadge}>
             <Text style={styles.stonesText}>∘ 10</Text>
@@ -98,7 +117,9 @@ export default function CreateChallengeScreen() {
         {/* Top buttons */}
         <View style={styles.buttonRow}>
           <TouchableOpacity style={styles.topButton} onPress={handleAchievements}>
-            <Text style={styles.topButtonText}>Achievements</Text>
+            <Text style={[styles.topButtonText, hasCompletedChallenges && styles.claimRewardText]}>
+              {hasCompletedChallenges ? 'Claim Reward' : 'Achievements'}
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.topButton} onPress={handleCopyReferral}>
             <Text style={styles.topButtonText}>Copy Referral Link</Text>
@@ -138,9 +159,33 @@ const styles = StyleSheet.create({
     backgroundColor: '#1A1A1A',
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
     paddingTop: 50,
+  },
+  logoAndProfile: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  logo: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: 'white',
+    marginRight: 10,
+  },
+  profilePic: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#2A2A2A',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  profileEmoji: {
+    fontSize: 20,
   },
   balanceContainer: {
     alignItems: 'flex-end',
@@ -179,6 +224,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     color: 'white',
+  },
+  claimRewardText: {
+    color: 'red',
+    fontWeight: 'bold',
   },
   createButton: {
     backgroundColor: '#666',

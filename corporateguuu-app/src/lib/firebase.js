@@ -45,15 +45,27 @@ const firebaseConfig = {
   appId: process.env.FIREBASE_APP_ID,
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export const functions = getFunctions(app);
-export const storage = getStorage(app);
+// Check for valid config
+let auth, db, functions, storage;
+if (!firebaseConfig.apiKey || firebaseConfig.apiKey === 'your_api_key_here') {
+  console.error('Firebase config is not properly set. Please update .env.local with real Firebase credentials.');
+  auth = null;
+  db = null;
+  functions = null;
+  storage = null;
+} else {
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  db = getFirestore(app);
+  functions = getFunctions(app);
+  storage = getStorage(app);
+}
+
+export { auth, db, functions, storage };
 
 // ⚡ Connect to emulator in development
-if (__DEV__) {
+if (__DEV__ && functions) {
   try {
     connectFunctionsEmulator(functions, "localhost", 5001);
   } catch (e) {
@@ -65,6 +77,10 @@ if (__DEV__) {
    AUTH HELPERS
 -------------------- */
 export async function ensureSignedIn() {
+  if (!auth) {
+    console.warn('Firebase auth not initialized. Skipping sign in.');
+    return null;
+  }
   return new Promise((resolve) => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) {
@@ -77,6 +93,10 @@ export async function ensureSignedIn() {
 }
 
 export async function registerUserProfile(user) {
+  if (!db) {
+    console.warn('Firebase db not initialized. Skipping user profile registration.');
+    return;
+  }
   const userRef = doc(db, "users", user.uid);
   const snap = await getDoc(userRef);
   if (!snap.exists()) {
@@ -93,6 +113,10 @@ export async function registerUserProfile(user) {
    FIRESTORE HELPERS
 -------------------- */
 export async function createDare({ title, description, rewardStone, creatorId }) {
+  if (!db) {
+    console.warn('Firebase db not initialized. Skipping createDare.');
+    return null;
+  }
   const docRef = await addDoc(collection(db, "dares"), {
     title,
     description,
@@ -105,6 +129,10 @@ export async function createDare({ title, description, rewardStone, creatorId })
 }
 
 export async function rewardUser(uid, rewardStone) {
+  if (!functions) {
+    console.warn('Firebase functions not initialized. Skipping rewardUser.');
+    return;
+  }
   try {
     const res = await updateStoneBalance({
       userId: uid,
@@ -122,6 +150,10 @@ export async function rewardUser(uid, rewardStone) {
    STORAGE HELPERS
 -------------------- */
 export async function uploadProofMedia(uri, path) {
+  if (!storage) {
+    console.warn('Firebase storage not initialized. Skipping uploadProofMedia.');
+    return null;
+  }
   const response = await fetch(uri);
   const blob = await response.blob();
   const storageRef = ref(storage, path);
@@ -133,15 +165,34 @@ export async function uploadProofMedia(uri, path) {
    CLOUD FUNCTION CALLS
 -------------------- */
 export function callAcceptDare(payload) {
+  if (!functions) {
+    console.warn('Firebase functions not initialized.');
+    return Promise.reject('Firebase functions not available');
+  }
   return httpsCallable(functions, "acceptDare")(payload);
 }
 
 export function callSubmitProof(payload) {
+  if (!functions) {
+    console.warn('Firebase functions not initialized.');
+    return Promise.reject('Firebase functions not available');
+  }
   return httpsCallable(functions, "submitProof")(payload);
 }
 
 export function callCompleteDare(payload) {
+  if (!functions) {
+    console.warn('Firebase functions not initialized.');
+    return Promise.reject('Firebase functions not available');
+  }
   return httpsCallable(functions, "completeDare")(payload);
 }
 
-export const updateStoneBalance = httpsCallable(functions, "updateStoneBalance");
+export function updateStoneBalance(payload) {
+  if (!functions) {
+    console.warn('Firebase functions not initialized.');
+    return Promise.reject('Firebase functions not available');
+  }
+  const call = httpsCallable(functions, "updateStoneBalance");
+  return call(payload);
+}
