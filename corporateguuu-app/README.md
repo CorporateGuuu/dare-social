@@ -1,6 +1,17 @@
-# Welcome to your Expo app 👋
+# Dare Social 👋
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Dare Social is a cross-platform mobile app built with React Native and Expo, empowering users to create, accept, and complete social dares for fun, fame, and rewards. Compete on leaderboards, earn virtual stones, and challenge friends in increasingly outrageous challenges!
+
+This is a post-MVP advanced app project with core features implemented, including Firebase backend integration for real-time updates, Twitter/X OAuth authentication, and comprehensive challenge management system.
+
+## Features
+
+- **Create Dares**: Users can create custom dare challenges with rewards and descriptions.
+- **Challenge Types**: Support for stones challenges, payout punishments, and general group challenges.
+- **Leaderboard**: Real-time global ranking based on stones balance.
+- **Voting System**: Community voting on dare completions.
+- **Authentication**: Twitter OAuth integration for social sign-in.
+- **Rewards System**: Earn and spend virtual stones for challenges.
 
 ## Get started
 
@@ -42,6 +53,68 @@ To learn more about developing your project with Expo, look at the following res
 - [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
 - [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
 
+## Testing
+
+This project includes Jest setup for unit and integration testing.
+
+### Running Tests
+
+```bash
+npm test
+```
+
+### Running Linting
+
+```bash
+npm run lint
+```
+
+## Deployment
+
+Using Expo Application Services (EAS) for building and distributing the app.
+
+### Prerequisites
+
+1. Install EAS CLI globally: `npm install -g @expo/eas-cli`
+2. Login to your Expo account: `eas login`
+
+### Building for Production
+
+- Build for all platforms: `eas build --platform all`
+- Android only: `eas build --platform android`
+- iOS only: `eas build --platform ios`
+
+See `eas.json` for build profiles and environment configurations.
+
+### Submitting to App Stores
+
+After building, submit to Google Play and App Store using:
+
+```bash
+eas submit --platform android
+eas submit --platform ios
+```
+
+For more information, refer to [EAS Build documentation](https://docs.expo.dev/build/introduction/).
+
+## API References
+
+### Firebase Collections
+
+- **users**: User profiles with stoneBalance, rankings, etc.
+- **dares**: Available dares for completion.
+- **challenges**: User-created challenges.
+- **votes**: Votes on dare completions.
+
+### Key Hooks
+
+- `useDares()`: Fetches available dares.
+- `useLeaderboard()`: Fetches leaderboard data.
+- `useRealtimeLeaderboard()`: Real-time leaderboard subscription.
+- `useAuth()`: Authentication state.
+
+Refer to source code in `src/hooks/` and `corporateguuu-app/src/` for implementation details.
+
 ## Authentication Setup
 
 ### Twitter/X OAuth 2.0 Setup
@@ -54,7 +127,7 @@ To learn more about developing your project with Expo, look at the following res
    - **Type of App**: Native app
    - **Callback URLs / Redirect URLs**:
 
-     ```
+     ```text
      https://auth.expo.io/@yourusername/corporateguuu-app
      corporateguuuapp://auth
      corporationtabapp://redirect
@@ -74,7 +147,7 @@ To learn more about developing your project with Expo, look at the following res
 
    - **For Expo Go development:**
 
-     ```
+     ```text
      https://auth.expo.io/@yourusername/corporateguuu-app
      ```
 
@@ -82,7 +155,7 @@ To learn more about developing your project with Expo, look at the following res
 
    - **For custom builds:**
 
-     ```
+     ```text
      corporateguuuapp://redirect
      ```
 

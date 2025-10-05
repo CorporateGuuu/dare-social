@@ -1,38 +1,49 @@
+import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    Alert,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  Alert,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
+
+const mockFriends = [
+  { id: 1, username: '@winterguy', avatar: '🥶' },
+  { id: 2, username: '@smilingguy', avatar: '😊' },
+  { id: 3, username: '@gradguy', avatar: '🎓' },
+  { id: 4, username: '@foodguy', avatar: '🍔' },
+];
 
 export default function CreateDareChallengeScreen() {
   const [claimText, setClaimText] = useState('');
   const [expirationDate, setExpirationDate] = useState('');
+  const [punishmentText, setPunishmentText] = useState('');
   const [isClaimFilled, setIsClaimFilled] = useState(false);
   const [isExpirationFilled, setIsExpirationFilled] = useState(false);
+  const [isPunishmentFilled, setIsPunishmentFilled] = useState(false);
+  const [hasOpponent, setHasOpponent] = useState(false);
+  const [opponentUsername, setOpponentUsername] = useState('');
 
   const handleBackPress = () => {
-    // Navigate back
-    console.log('Navigate back');
+    router.back();
   };
 
   const handleUseDifferentFrame = () => {
-    // Navigate to Dare_Frame_Gallery
-    console.log('Navigate to Dare_Frame_Gallery');
+    router.push('/Dare_Frame_Gallery');
   };
 
+  const isFormComplete = isClaimFilled && isExpirationFilled && hasOpponent && isPunishmentFilled;
+
   const handleSubmit = () => {
-    if (!isClaimFilled || !isExpirationFilled) {
+    if (!isFormComplete) {
       Alert.alert('Error', 'Please fill in all required information');
       return;
     }
-    // Submit the dare challenge
-    console.log('Submit dare challenge');
+    router.push('/tracker_invites');
   };
 
   const handleClaimChange = (text: string) => {
@@ -102,22 +113,69 @@ export default function CreateDareChallengeScreen() {
             <Text style={styles.claimantAvatar}>{currentUser}</Text>
             <Text style={styles.agreeIcon}>⭕</Text>
           </View>
+
+          {/* Opponent Section */}
+          <View style={styles.opponentSection}>
+            <TextInput
+              style={[
+                styles.opponentSearch,
+                !hasOpponent && styles.requiredInput
+              ]}
+              placeholder="add opponent"
+              placeholderTextColor="#888"
+              value={opponentUsername}
+              onChangeText={(text) => {
+                setOpponentUsername(text);
+                setHasOpponent(text.trim().length > 0);
+              }}
+            />
+
+            {/* Selected Opponent Display */}
+            {hasOpponent && (
+              <View style={styles.opponentRow}>
+                <Text style={styles.disagreeIcon}>🔄</Text>
+                <View style={styles.selectedOpponent}>
+                  <Text style={styles.opponentAvatar}>🤓</Text>
+                  <Text style={styles.opponentUsername}>{opponentUsername}</Text>
+                </View>
+                <Text style={styles.disagreeIcon}>🔄</Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        {/* Punishment Section */}
+        <View style={styles.punishmentSection}>
+          <TextInput
+            style={[
+              styles.punishmentInput,
+              !isPunishmentFilled && styles.requiredInput
+            ]}
+            multiline
+            placeholder="The loser has to..."
+            placeholderTextColor="#ccc"
+            value={punishmentText}
+            onChangeText={(text) => {
+              setPunishmentText(text);
+              setIsPunishmentFilled(text.trim().length > 0);
+            }}
+          />
         </View>
 
         {/* Submit Button */}
         <TouchableOpacity
           style={[
             styles.submitButton,
-            (isClaimFilled && isExpirationFilled) ? styles.submitButtonActive : styles.submitButtonInactive
+            isFormComplete ? styles.submitButtonActive : styles.submitButtonInactive
           ]}
           onPress={handleSubmit}
-          disabled={!(isClaimFilled && isExpirationFilled)}
+          disabled={!isFormComplete}
         >
           <Text style={[
             styles.submitButtonText,
-            (isClaimFilled && isExpirationFilled) ? styles.submitButtonTextActive : styles.submitButtonTextInactive
+            isFormComplete ? styles.submitButtonTextSubmit : styles.submitButtonTextIncomplete
           ]}>
-            Create Dare Challenge
+            {isFormComplete ? 'submit' : 'incomplete'}
           </Text>
         </TouchableOpacity>
       </ScrollView>
@@ -241,5 +299,62 @@ const styles = StyleSheet.create({
   },
   submitButtonTextInactive: {
     color: '#666',
+  },
+  submitButtonTextSubmit: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  submitButtonTextIncomplete: {
+    color: '#ff6b6b', // Same bright color as incomplete placeholders
+    fontWeight: 'bold',
+  },
+  punishmentSection: {
+    marginBottom: 20,
+  },
+  punishmentInput: {
+    borderWidth: 1,
+    borderColor: '#555',
+    borderRadius: 10,
+    padding: 15,
+    fontSize: 16,
+    color: 'white',
+    minHeight: 60,
+    textAlignVertical: 'top',
+    backgroundColor: '#2A2A2A',
+  },
+  opponentSection: {
+    marginTop: 20,
+  },
+  opponentSearch: {
+    borderWidth: 1,
+    borderColor: '#555',
+    borderRadius: 10,
+    padding: 15,
+    fontSize: 16,
+    color: 'white',
+    backgroundColor: '#333',
+    marginBottom: 15,
+  },
+  opponentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 15,
+  },
+  disagreeIcon: {
+    fontSize: 20,
+    color: '#ff6b6b',
+    marginHorizontal: 20,
+  },
+  selectedOpponent: {
+    alignItems: 'center',
+  },
+  opponentAvatar: {
+    fontSize: 32,
+    marginBottom: 5,
+  },
+  opponentUsername: {
+    fontSize: 14,
+    color: '#ccc',
   },
 });
