@@ -2,30 +2,36 @@ import { useContext } from "react";
 import { Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { AuthContext } from '../context/AuthContext';
 
-export default function ProfileScreen() {
+export default function Current_User_Account({ navigation }) {
   const { user, logout } = useContext(AuthContext);
+  const profileUser = navigation.getParam('user') || user;
+  const isOwnProfile = !navigation.getParam('user');
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Image source={{ uri: user.avatar }} style={styles.avatarHeader} />
-        <Text style={styles.logo}>▲</Text>
-        <View style={styles.stones}>
-          <Text style={styles.stonesText}>∘ {user.stones}</Text>
-        </View>
-        <TouchableOpacity onPress={logout}>
-          <Text style={styles.logout}>Logout</Text>
-        </TouchableOpacity>
+        <Image source={{ uri: profileUser.avatar }} style={styles.avatarHeader} />
+        <Text style={styles.logo}>{isOwnProfile ? '▲' : profileUser.username || '@user'}</Text>
+        {isOwnProfile && (
+          <View style={styles.stones}>
+            <Text style={styles.stonesText}>∘ {profileUser.stones}</Text>
+          </View>
+        )}
+        {isOwnProfile && (
+          <TouchableOpacity onPress={logout}>
+            <Text style={styles.logout}>Logout</Text>
+          </TouchableOpacity>
+        )}
       </View>
       {/* Rest of the screen */}
       <View style={styles.content}>
-        <Image source={{ uri: user.avatar }} style={styles.realAvatar} />
-        <Text style={styles.name}>{user.username || '@you'}</Text>
-        <Text style={styles.meta}>Stone: {user.stones} 🪨  •  Level: {user.level}  •  Streak: {user.currentStreak}</Text>
+        <Image source={{ uri: profileUser.avatar }} style={styles.realAvatar} />
+        <Text style={styles.name}>{profileUser.username || '@you'}</Text>
+        <Text style={styles.meta}>Stone: {profileUser.stones} 🪨  •  Level: {profileUser.level}  •  Streak: {profileUser.currentStreak}</Text>
 
-        <View style={styles.block}><Text>My Dares (placeholder)</Text></View>
+        <View style={styles.block}><Text>{isOwnProfile ? 'My Dares (placeholder)' : 'Their Dares (placeholder)'}</Text></View>
         <View style={styles.block}><Text>Activity (placeholder)</Text></View>
-        <View style={styles.block}><Text>Settings (placeholder)</Text></View>
+        <View style={styles.block}><Text>{isOwnProfile ? 'Settings (placeholder)' : ''}</Text></View>
       </View>
     </SafeAreaView>
   );

@@ -10,6 +10,61 @@ exports.listDares = functions.https.onCall(async (data, context) => {
   return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 });
 
+// List Completed Dares (Proofs/Posts)
+exports.listCompletedDares = functions.https.onCall(async (data, context) => {
+  const snap = await db.collection("dares").where("status", "==", "completed").get();
+  const dares = [];
+
+  for (const doc of snap.docs) {
+    const dareData = doc.data();
+    const dare = { id: doc.id, ...dareData };
+
+    if (dareData.winnerId) {
+      const winnerSnap = await db.collection("users").doc(dareData.winnerId).get();
+      if (winnerSnap.exists) {
+        dare.winner = { uid: winnerSnap.id, username: winnerSnap.data().username || winnerSnap.data().displayName || 'Unknown' };
+      }
+
+      // Get winner's proof
+      const proofsSnap = await db.collection("dares").doc(doc.id).collection("proofs").get();
+      const winnerProof = proofsSnap.docs.find(proofDoc => proofDoc.data().uid === dareData.winnerId);
+      if (winnerProof) {
+        dare.winnerProof = {
+          id: winnerProof.id,
+          mediaUrl: winnerProof.data().mediaUrl,
+          caption: winnerProof.data().caption
+        };
+      }
+
+      // Get participants to find losers
+      const participantsSnap = await db.collection("dares").doc(doc.id).collection("participants").get();
+      const losers = [];
+      for (const participantDoc of participantsSnap.docs) {
+        const uid = participantDoc.id;
+        if (uid !== dareData.winnerId) {
+          const userSnap = await db.collection("users").doc(uid).get();
+          if (userSnap.exists) {
+            losers.push({ uid, username: userSnap.data().username || userSnap.data().displayName || 'Unknown' });
+          }
+        }
+      }
+      dare.losers = losers;
+    }
+
+    dares.push(dare);
+  }
+
+  return dares;
+});
+
+// Get User by ID
+exports.getUserById = functions.https.onCall(async ({ userId }, context) => {
+  const userRef = db.collection("users").doc(userId);
+  const userSnap = await userRef.get();
+  if (!userSnap.exists) throw new functions.https.HttpsError("not-found", "User not found");
+  return { id: userSnap.id, ...userSnap.data() };
+});
+
 // 2. Accept Dare
 exports.acceptDare = functions.https.onCall(async ({ dareId }, context) => {
   const uid = context.auth?.uid;

@@ -1,16 +1,9 @@
 import { NavigationContainer } from "@react-navigation/native";
-import { createStackNavigator } from "@react-navigation/native-stack";
 import * as Notifications from "expo-notifications";
 import { useEffect, useRef } from "react";
 import { Text, View } from "react-native";
 import { AuthContext, AuthProvider } from "./src/context/AuthContext";
-import AchievementsScreen from "./src/screens/AchievementsScreen";
-import ChallengesScreen from "./src/screens/ChallengesScreen";
-import CreateChallengeFormScreen from "./src/screens/CreateChallengeFormScreen";
-import LoginScreen from "./src/screens/LoginScreen";
-// Import other screens: AchievementsScreen, ChallengesScreen, etc.
-
-const Stack = createStackNavigator();
+import RootNavigator from "./src/navigation/RootNavigator";
 
 // Define notification categories and actions for interactive notifications
 const notificationCategories = [
@@ -146,18 +139,7 @@ function App() {
 
           return (
             <NavigationContainer>
-              <Stack.Navigator>
-                {user ? (
-                  <>
-                    <Stack.Screen name="Achievements" component={AchievementsScreen} />
-                    <Stack.Screen name="Challenges" component={ChallengesScreen} />
-                    <Stack.Screen name="CreateChallengeForm" component={CreateChallengeFormScreen} />
-                    {/* Add other screens */}
-                  </>
-                ) : (
-                  <Stack.Screen name="Login" component={LoginScreen} />
-                )}
-              </Stack.Navigator>
+              <RootNavigator user={user} />
             </NavigationContainer>
           );
         }}

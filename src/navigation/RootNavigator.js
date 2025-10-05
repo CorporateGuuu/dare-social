@@ -1,15 +1,19 @@
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from '@expo/vector-icons/Ionicons';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/native-stack';
 
 // Screens
 import ChallengesScreen from '../screens/ChallengesScreen';
 import CompleteDareScreen from '../screens/CompleteDareScreen';
+import Create_Challenge_Home from '../screens/CreateChallengeScreen';
 import DareDetailsScreen from '../screens/DareDetailsScreen';
+import Frame_Market from '../screens/FrameMarketScreen';
 import HomeFeedScreen from '../screens/HomeFeedScreen';
 import LeaderboardScreen from '../screens/LeaderboardScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
-import ProfileScreen from '../screens/ProfileScreen';
+import Current_User_Account from '../screens/ProfileScreen';
+import TrackerScreen from '../screens/TrackerScreen';
 import WalletScreen from '../screens/WalletScreen';
 
 const Stack = createStackNavigator();
@@ -21,11 +25,24 @@ function MainTabs() {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarIcon: ({ color, size }) => {
+          if (route.name === 'Frames') {
+            return <MaterialIcons name="document-scanner" size={size ?? 20} color={color ?? "#333"} />;
+          }
+          if (route.name === 'HomeFeed') {
+            return <MaterialIcons name="camera" size={size ?? 20} color={color ?? "#333"} />;
+          }
+          if (route.name === 'Tracker') {
+            return <MaterialIcons name="tune" size={size ?? 20} color={color ?? "#333"} />;
+          }
+          if (route.name === 'Create_Challenge_Home') {
+            return <MaterialIcons name="enhanced-encryption" size={size ?? 20} color={color ?? "#333"} />;
+          }
+          if (route.name === 'Profile') {
+            return <MaterialIcons name="tag_faces" size={size ?? 20} color={color ?? "#333"} />;
+          }
           const map = {
-            HomeFeed: "home-outline",
             Leaderboard: "trophy-outline",
             Wallet: "wallet-outline",
-            Profile: "person-circle-outline",
           };
           return <Ionicons name={map[route.name]} size={size ?? 20} color={color ?? "#333"} />;
         },
@@ -33,17 +50,20 @@ function MainTabs() {
         tabBarInactiveTintColor: "#888",
       })}
     >
-      <Tab.Screen name="HomeFeed" component={HomeFeedScreen} options={{ tabBarLabel: "Home" }} />
+      <Tab.Screen name="Frames" component={Frame_Market} options={{ tabBarLabel: "Frames" }} />
+      <Tab.Screen name="HomeFeed" component={HomeFeedScreen} options={{ tabBarLabel: "feed" }} />
       <Tab.Screen name="Leaderboard" component={LeaderboardScreen} options={{ tabBarLabel: "Ranks" }} />
       <Tab.Screen name="Wallet" component={WalletScreen} options={{ tabBarLabel: "Wallet" }} />
-      <Tab.Screen name="Profile" component={ProfileScreen} options={{ tabBarLabel: "Profile" }} />
+      <Tab.Screen name="Tracker" component={TrackerScreen} options={{ tabBarLabel: "Tracker" }} />
+      <Tab.Screen name="Profile" component={Current_User_Account} options={{ tabBarLabel: "Profile" }} />
+      <Tab.Screen name="Create_Challenge_Home" component={Create_Challenge_Home} options={{ tabBarLabel: "Create" }} />
     </Tab.Navigator>
   );
 }
 
-const RootNavigator = () => {
+const RootNavigator = ({ user }) => {
   return (
-    <Stack.Navigator initialRouteName="Onboarding">
+    <Stack.Navigator initialRouteName={user ? "Main" : "Onboarding"}>
       <Stack.Screen name="Onboarding" component={OnboardingScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Main" component={MainTabs} options={{ headerShown: false }} />
       <Stack.Screen name="DareDetails" component={DareDetailsScreen} />

@@ -30,9 +30,12 @@ export async function ensureSignedIn() {
 
 // Cloud Functions
 export const listDares = httpsCallable(functions, "listDares");
+export const listCompletedDares = httpsCallable(functions, "listCompletedDares");
+export const getUserById = httpsCallable(functions, "getUserById");
 export const acceptDare = httpsCallable(functions, "acceptDare");
 export const submitProof = httpsCallable(functions, "submitProof");
 export const castVote = httpsCallable(functions, "castVote");
 export const completeDare = httpsCallable(functions, "completeDare");
 export const updateStoneBalance = httpsCallable(functions, "updateStoneBalance");
 export const updateDailyStreak = httpsCallable(functions, "updateDailyStreak");
+export const searchUsers = httpsCallable(functions, "searchUsers");
