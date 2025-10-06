@@ -5,49 +5,6 @@ import { Text, View } from "react-native";
 import { AuthContext, AuthProvider } from "./src/context/AuthContext";
 import RootNavigator from "./src/navigation/RootNavigator";
 
-// Define notification categories and actions for interactive notifications
-const notificationCategories = [
-  {
-    identifier: 'VOTING_ALERT',
-    actions: [
-      {
-        identifier: 'ACCEPT_VOTE',
-        title: 'Accept Vote',
-        buttonTitle: 'Accept',
-        options: { isAuthenticationRequired: false }
-      },
-      {
-        identifier: 'VIEW_CHALLENGE',
-        title: 'View Challenge',
-        options: { isAuthenticationRequired: false }
-      },
-    ],
-    options: {
-      allowInCarPlay: true,
-      allowAnnouncement: true,
-    },
-  },
-  {
-    identifier: 'CHALLENGE_RESULT',
-    actions: [
-      {
-        identifier: 'VIEW_WINNER',
-        title: 'View Winner',
-        options: { isAuthenticationRequired: false }
-      },
-      {
-        identifier: 'CREATE_NEW',
-        title: 'Create New Challenge',
-        options: { isAuthenticationRequired: false }
-      },
-    ],
-    options: {
-      allowInCarPlay: true,
-      allowAnnouncement: true,
-    },
-  },
-];
-
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
@@ -55,10 +12,6 @@ Notifications.setNotificationHandler({
     shouldSetBadge: true,
   }),
 });
-
-// Register notification categories on app start
-Notifications.setNotificationCategoryAsync('VOTING_ALERT', notificationCategories[0]);
-Notifications.setNotificationCategoryAsync('CHALLENGE_RESULT', notificationCategories[1]);
 
 function App() {
   const notificationListener = useRef();

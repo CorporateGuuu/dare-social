@@ -1,7 +1,7 @@
 import * as Haptics from 'expo-haptics'; // For haptic on vote
 import { useContext, useState } from 'react';
 import { Animated, FlatList, Image, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { castVote } from '../../corporateguuu-app/src/utils/votingUtils';
+import { castVote } from '../utils/votingUtils';
 import { AuthContext } from '../context/AuthContext';
 import { useModalAnimation, useSpringScale } from '../hooks/useAnimations';
 
@@ -9,7 +9,7 @@ const VotingModal = ({ isVisible, onClose, challengeId, proofs }) => {
   const { user } = useContext(AuthContext);
   const [votedProofs, setVotedProofs] = useState(new Set());
   const { fadeAnim, scaleAnim } = useModalAnimation(isVisible);
-  const [scaleAnimVote, triggerVoteAnimation] = useSpringScale(1);
+  const [, triggerVoteAnimation] = useSpringScale(1);
 
   const handleVote = async (proofId, vote) => {
     if (votedProofs.has(proofId)) return;

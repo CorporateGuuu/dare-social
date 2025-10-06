@@ -2,10 +2,10 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Notifications from 'expo-notifications';
 import React, { useContext, useEffect, useState } from 'react';
 import { Animated, FlatList, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { submitProof, tallyVotes } from '../../corporateguuu-app/src/utils/votingUtils';
+import { submitProof, tallyVotes } from '../utils/votingUtils';
 import VotingModal from '../components/VotingModal';
 import { AuthContext } from '../context/AuthContext';
-import { useFadeIn, useSlideUp, useSwipeGesture } from '../hooks/useAnimations';
+import { useFadeIn, useSwipeGesture } from '../hooks/useAnimations';
 
 import { useNavigation } from '@react-navigation/native';
 
@@ -44,7 +44,6 @@ const ChallengesScreen = () => {
   const { user } = useContext(AuthContext);
   const navigation = useNavigation();
   const fadeAnim = useFadeIn(500);
-  const slideAnim = useSlideUp(50, 500);
 
   const [challenges, setChallenges] = useState([
     { id: '1', title: 'The Kings will be better than the Bulls', opponent: '@frankvecchie', stakes: '25', status: 'active' },
@@ -60,17 +59,24 @@ const ChallengesScreen = () => {
   useEffect(() => {
     // Handle notification updates for UI
     const subscription = Notifications.addNotificationReceivedListener(notification => {
-      setUnreadNotifications(prev => prev + 1);
+      try {
+        setUnreadNotifications(prev => prev + 1);
 
-      // Highlight challenges with voting alerts
-      if (notification.request.content.categoryIdentifier === 'VOTING_ALERT') {
-        setChallenges(prevChallenges =>
-          prevChallenges.map(c =>
-            c.id === notification.request.content.data.challengeId
-              ? { ...c, votingAlert: true }
-              : c
-          )
-        );
+        // Highlight challenges with voting alerts
+        if (notification?.request?.content?.categoryIdentifier === 'VOTING_ALERT') {
+          const data = notification?.request?.content?.data;
+          if (data?.challengeId) {
+            setChallenges(prevChallenges =>
+              prevChallenges.map(c =>
+                c.id === data.challengeId.toString()
+                  ? { ...c, votingAlert: true }
+                  : c
+              )
+            );
+          }
+        }
+      } catch (error) {
+        console.error('Error handling notification:', error);
       }
     });
     return () => subscription.remove();
@@ -80,9 +86,15 @@ const ChallengesScreen = () => {
     // const { pan, panHandlers } = useSwipeGesture(/* callbacks */);
 
     const handleSubmitProof = async () => {
-      const { status } = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images });
-      if (status !== 'done') return;
-      const proofData = { text: 'Mock proof text', image: 'mock-uri' };
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8
+      });
+      if (result.canceled) return;
+      const imageUri = result.assets[0].uri;
+      const proofData = { text: 'Mock proof text', image: imageUri };
       await submitProof(item.id, user.id, proofData);
       // Refresh proofs
     };
@@ -94,7 +106,7 @@ const ChallengesScreen = () => {
         { id: 'proof2', user: { username: '@user2' }, text: 'Here is my proof', image: 'https://example.com/image.jpg', votes: { yes: 3, no: 0 } },
       ]); // Mock
       setVotingModalVisible(true);
-      tallyVotes(item.id); // Start auto-tally timer
+      setTimeout(() => tallyVotes([]), 30000); // Start auto-tally timer after 30 seconds
     };
 
     const handleOpenChat = () => {

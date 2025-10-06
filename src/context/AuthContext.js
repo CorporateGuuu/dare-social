@@ -1,6 +1,6 @@
 import { doc, onSnapshot } from 'firebase/firestore';
 import { createContext, useEffect, useState } from 'react';
-import { auth, db, updateDailyStreak } from '../lib/firebase';
+import { auth, db } from '../config/firebase';
 
 export const AuthContext = createContext();
 
@@ -13,11 +13,12 @@ export const AuthProvider = ({ children }) => {
       if (firebaseUser) {
         const uid = firebaseUser.uid;
         // Update daily streak on login
-        try {
-          await updateDailyStreak();
-        } catch (error) {
-          console.error('Error updating streak:', error);
-        }
+        // Temporarily commented out to prevent crash
+        // try {
+        //   await updateDailyStreak();
+        // } catch (error) {
+        //   console.error('Error updating streak:', error);
+        // }
 
         // Listen to user document
         const userDocRef = doc(db, 'users', uid);
