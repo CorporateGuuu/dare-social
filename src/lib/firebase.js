@@ -1,23 +1,11 @@
 import { getApp } from "firebase/app";
-import { getAuth, onAuthStateChanged, signInAnonymously } from "firebase/auth";
+import { onAuthStateChanged, signInAnonymously } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getFunctions, httpsCallable } from "firebase/functions";
 
 const app = getApp();
-export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const functions = getFunctions(app);
-
-// auto sign-in
-export async function ensureSignedIn() {
-  return new Promise((resolve) => {
-    const unsub = onAuthStateChanged(auth, async (user) => {
-      if (!user) await signInAnonymously(auth);
-      unsub();
-      resolve(auth.currentUser);
-    });
-  });
-}
 
 // Cloud Functions
 export const listDares = httpsCallable(functions, "listDares");
