@@ -1,5 +1,6 @@
 import { doc, onSnapshot } from 'firebase/firestore';
 import { createContext, useEffect, useState } from 'react';
+import { signInAnonymously } from 'firebase/auth';
 import { auth, db } from '../config/firebase';
 
 export const AuthContext = createContext();
@@ -51,12 +52,19 @@ export const AuthProvider = ({ children }) => {
             });
           }
           setLoading(false);
+        }, (error) => {
+          console.error('Error fetching user document:', error);
+          setUser(null);
+          setLoading(false);
         });
 
         return () => unsubscribeUser();
       } else {
-        setUser(null);
-        setLoading(false);
+        signInAnonymously(auth).catch((error) => {
+          console.error('Anonymous sign in failed:', error);
+          setUser(null);
+          setLoading(false);
+        });
       }
     });
 

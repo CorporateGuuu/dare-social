@@ -2,10 +2,28 @@ import { useContext } from "react";
 import { Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { AuthContext } from '../context/AuthContext';
 
-export default function Current_User_Account({ navigation }) {
-  const { user, logout } = useContext(AuthContext);
-  const profileUser = navigation.getParam('user') || user;
-  const isOwnProfile = !navigation.getParam('user');
+export default function Current_User_Account(props) {
+  const { navigation, route } = props;
+  const { user, logout, loading } = useContext(AuthContext);
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Text>Loading...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  if (!user) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Text>Error loading profile. Please try again.</Text>
+      </SafeAreaView>
+    );
+  }
+
+  const profileUser = route.params?.user || user;
+  const isOwnProfile = !route.params?.user;
 
   return (
     <SafeAreaView style={styles.container}>

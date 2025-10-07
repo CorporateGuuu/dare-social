@@ -75,6 +75,7 @@ const RootNavigator = ({ user }) => {
       <Stack.Screen name="DareDetails" component={DareDetailsScreen} />
       <Stack.Screen name="CompleteDare" component={CompleteDareScreen} />
       <Stack.Screen name="Challenges" component={ChallengesScreen} />
+      <Stack.Screen name="CreateChallenge" component={Create_Challenge_Home} />
     </Stack.Navigator>
   );
 };

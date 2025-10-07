@@ -8,10 +8,10 @@ export default function WalletScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Image source={{ uri: user.avatar }} style={styles.avatar} />
+        {user?.avatar ? <Image source={{ uri: user.avatar }} style={styles.avatar} /> : <View style={styles.avatar} />}
         <Text style={styles.logo}>▲</Text>
         <View style={styles.stones}>
-          <Text style={styles.stonesText}>∘ {user.stones}</Text>
+          <Text style={styles.stonesText}>∘ {user?.stones || 0}</Text>
         </View>
         <TouchableOpacity onPress={logout}>
           <Text style={styles.logout}>Logout</Text>
@@ -22,18 +22,18 @@ export default function WalletScreen() {
         <Text style={styles.feedHeader}>Wallet</Text>
         <View style={styles.balance}>
           <Text style={styles.balanceText}>Stone Balance</Text>
-          <Text style={styles.amount}>{user.stones} 🪨</Text>
-          <Text style={styles.levelText}>Level {user.level} • {user.xp} XP</Text>
+          <Text style={styles.amount}>{user?.stones || 0} 🪨</Text>
+          <Text style={styles.levelText}>Level {user?.level || 1} • {user?.xp || 0} XP</Text>
         </View>
 
         <View style={styles.streakInfo}>
-          <Text style={styles.streakText}>{user.currentStreak} Day Streak</Text>
+          <Text style={styles.streakText}>{user?.currentStreak || 0} Day Streak</Text>
         </View>
 
         {/* Placeholder transactions - in real app, fetch from user.transactions */}
         <View style={styles.txCard}><Text>+20 — Completed Dare — Today</Text></View>
-        {user.currentStreak > 0 && (
-          <View style={styles.txCard}><Text>+5 — Daily Streak ({user.currentStreak} days)</Text></View>
+        {(user?.currentStreak || 0) > 0 && (
+          <View style={styles.txCard}><Text>+5 — Daily Streak ({user?.currentStreak || 0} days)</Text></View>
         )}
       </View>
     </SafeAreaView>

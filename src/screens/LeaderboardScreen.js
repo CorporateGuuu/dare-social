@@ -10,10 +10,10 @@ export default function LeaderboardScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Image source={{ uri: user.avatar }} style={styles.avatar} />
+        {user?.avatar ? <Image source={{ uri: user.avatar }} style={styles.avatar} /> : <View style={styles.avatar} />}
         <Text style={styles.logo}>▲</Text>
         <View style={styles.stones}>
-          <Text style={styles.stonesText}>∘ {user.stones}</Text>
+          <Text style={styles.stonesText}>∘ {user?.stones || 0}</Text>
         </View>
         <TouchableOpacity onPress={logout}>
           <Text style={styles.logout}>Logout</Text>

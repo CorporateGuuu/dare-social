@@ -88,7 +88,7 @@ export default function Frame_Market() {
             }}>
               <MaterialIcons name="favorite-border" size={30} color="#ccc" />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => navigation.navigate('CreateChallengeFormScreen', { frame: selectedFrame })}>
+            <TouchableOpacity onPress={() => navigation.navigate('CreateChallenge', { frame: selectedFrame })}>
               <MaterialIcons name="add-box" size={30} color="#007bff" />
             </TouchableOpacity>
           </View>
@@ -124,7 +124,7 @@ export default function Frame_Market() {
             {frame ? (
               <TouchableOpacity onPress={() => setSelectedFrame(frame)} style={styles.stoneFrame}>
                 <Text style={styles.smallText}>{frame.name}</Text>
-                <View style={styles.ufsmalldiamonds}>
+                <View style={styles.smallDiamonds}>
                   {Array.from({ length: frame.rarity }, (_, i) => <Text key={i} style={styles.smallDiamond}>♦</Text>)}
                 </View>
               </TouchableOpacity>
@@ -187,9 +187,9 @@ export default function Frame_Market() {
               <View key={section.key} style={styles.sectionContainer}>
                 <Text style={styles.sectionTitle}>{section.title}</Text>
                 {section.data.map((row, index) => (
-                  <View key={index} style={styles.stoneRow}>
+                  <View key={`${section.key}-row-${index}`} style={styles.stoneRow}>
                     {row.map((frame, slotIndex) => (
-                      <View key={frame ? frame.id : `blank-${index}-${slotIndex}`} style={styles.stoneSlot}>
+                      <View key={frame ? `${section.key}-${frame.id}` : `blank-${section.key}-${index}-${slotIndex}`} style={styles.stoneSlot}>
                         {frame ? (
                           <TouchableOpacity onPress={() => setSelectedFrame(frame)} style={styles.stoneFrame}>
                             <Text style={styles.smallText}>{frame.name}</Text>
@@ -209,13 +209,11 @@ export default function Frame_Market() {
               </View>
             ))
           ) : (
-            <FlatList
-              data={selectedSection === 'dare' ? favorites : frames}
-              keyExtractor={(item) => item.id.toString()}
-              renderItem={renderCard}
-              numColumns={1}
-              showsVerticalScrollIndicator={false}
-            />
+            (selectedSection === 'dare' ? favorites : frames).map((item) => (
+              <View key={item.id}>
+                {renderCard({ item })}
+              </View>
+            ))
           )}
         </View>
       </ScrollView>
