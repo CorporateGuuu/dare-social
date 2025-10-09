@@ -2,10 +2,11 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import { useContext, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { ActivityIndicator, Animated, FlatList, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Animated, FlatList, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Modal from 'react-native-modal';
 import { AuthContext } from '../context/AuthContext';
 import { useModalAnimation } from '../hooks/useAnimations';
+import { searchUsers } from '../lib/firebase';
 
 const CreateChallengeFormScreen = ({ isVisible, onClose }) => {
   const { user } = useContext(AuthContext);
@@ -20,12 +21,33 @@ const CreateChallengeFormScreen = ({ isVisible, onClose }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { fadeAnim, scaleAnim } = useModalAnimation(isVisible);
 
-  const onSubmit = (data) => {
+  const onSubmit = async (data) => {
+    // Check opponent funds
+    const opponents = isGroup ? selectedOpponents : [data.opponent];
+    const stakes = parseInt(data.stakes);
+
+    for (const username of opponents) {
+      try {
+        const result = await searchUsers({ query: username });
+        const opponentData = result.data && result.data.find(u => u.username === username);
+        if (!opponentData || opponentData.stoneBalance < stakes) {
+          Alert.alert(
+            "Insufficient Funds",
+            "One or more opponents do not have sufficient stones to wager."
+          );
+          return;
+        }
+      } catch (error) {
+        Alert.alert("Error", "Unable to verify opponent funds. Please try again.");
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     const challengeData = {
       ...data,
       type: isGroup ? 'group' : '1v1',
-      opponents: isGroup ? selectedOpponents : [data.opponent],
+      opponents: opponents,
       expiration: expirationDate.toISOString(),
       creator: user.username,
       payouts: isGroup ? payouts.reduce((acc, pos, idx) => ({ ...acc, [pos]: data[pos] || '' }), {}) : {},

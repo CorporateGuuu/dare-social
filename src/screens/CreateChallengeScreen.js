@@ -1,6 +1,7 @@
 import { useNavigation } from '@react-navigation/native';
 import { useContext, useState } from 'react';
-import { Animated, FlatList, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import { useFadeIn, useSlideUp, useSpringScale } from '../hooks/useAnimations';
 import CreateChallengeFormScreen from './CreateChallengeFormScreen';

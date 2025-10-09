@@ -1,4 +1,4 @@
-import { doc, getDoc } from "firebase/firestore";
+import { collection, doc, getDoc, onSnapshot } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { acceptDare, db } from "../lib/firebase";
@@ -10,17 +10,13 @@ export default function DareDetailsScreen({ navigation, route }) {
   const [winner, setWinner] = useState(null);
 
   useEffect(() => {
-    const unsubscribe = db
-      .collection("dares")
-      .doc(dare.id)
-      .collection("proofs")
-      .onSnapshot((snapshot) => {
-        const proofsList = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        setProofs(proofsList);
-      });
+    const unsubscribe = onSnapshot(collection(doc(collection(db, "dares"), dare.id), "proofs"), (snapshot) => {
+      const proofsList = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setProofs(proofsList);
+    });
     return unsubscribe;
   }, [dare.id]);
 

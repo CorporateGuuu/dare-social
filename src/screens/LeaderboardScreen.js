@@ -1,5 +1,6 @@
 import { useContext } from "react";
-import { Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { AuthContext } from '../context/AuthContext';
 import { useRealtimeLeaderboard } from '../hooks/useRealtimeLeaderboard';
 
@@ -28,21 +29,18 @@ export default function LeaderboardScreen() {
           <>
             <View style={styles.topRow}>
               <View style={styles.card}>
-                <Text style={styles.rank}>🥈</Text>
                 {users[1] ? <Text style={styles.name}>{users[1].displayName}</Text> : <Text>?</Text>}
               </View>
               <View style={[styles.card, styles.centerCard]}>
-                <Text style={styles.rank}>🥇</Text>
                 {users[0] ? <Text style={styles.name}>{users[0].displayName}</Text> : <Text>?</Text>}
               </View>
               <View style={styles.card}>
-                <Text style={styles.rank}>🥉</Text>
                 {users[2] ? <Text style={styles.name}>{users[2].displayName}</Text> : <Text>?</Text>}
               </View>
             </View>
             <View style={styles.listCard}>
               {users.slice(3).map((user) => (
-                <Text key={user.uid}>{user.rank}) {user.displayName} — {user.stoneBalance} Stone</Text>
+                <Text key={user.uid}>{user.displayName} — {user.stoneBalance} Stone</Text>
               ))}
             </View>
             <Text style={styles.encouragement}>
@@ -71,7 +69,6 @@ const styles = StyleSheet.create({
   topRow: { flexDirection: "row", justifyContent: "space-between" },
   card: { flex: 1, height: 88, backgroundColor: "#eee", margin: 4, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   centerCard: { transform: [{ translateY: -8 }] },
-  rank: { fontSize: 28 },
   name: { fontSize: 14, marginTop: 4, textAlign: 'center' },
   listCard: { marginTop: 16, backgroundColor: "#f4f4f4", padding: 12, borderRadius: 12 },
   encouragement: { color: "#666", marginTop: 12, fontWeight: "600", textAlign: 'center' },

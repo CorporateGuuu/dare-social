@@ -1,10 +1,12 @@
 import * as AV from 'expo-av';
-import { useContext, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, FlatList, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Animated, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { collection, doc, addDoc, updateDoc, arrayUnion, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { OPENAI_API_KEY, WHISPER_API_URL } from '../constants/api';
 import { AuthContext } from '../context/AuthContext';
 import { useFadeIn, useSlideUp } from '../hooks/useAnimations';
-import { db } from '../lib/firebase';
+import { db } from '../config/firebase';
 
 const ChatScreen = ({ route }) => {
   const { user, setTyping } = useContext(AuthContext);
@@ -14,36 +16,65 @@ const ChatScreen = ({ route }) => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [typingUsers, setTypingUsers] = useState({});
-  const [recording, setRecording] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
-  const [progress, setProgress] = useState(new Animated.Value(0));
+  const [progress] = useState(new Animated.Value(0));
   const flatListRef = useRef();
   const typingTimeout = useRef(null);
   const recordingInterval = useRef(null);
+  const recordingRef = useRef(null);
+
+  const getAudioDuration = useCallback(async (uri) => {
+    const { sound } = await AV.Audio.Sound.createAsync({ uri });
+    const status = await sound.getStatusAsync();
+    await sound.unloadAsync();
+    return status;
+  }, []);
+
+  const sendVoiceMessage = useCallback(async (uri) => {
+    const { durationMillis } = await getAudioDuration(uri);
+    const messageData = {
+      type: 'voice',
+      uri: uri, // Mock; use Firebase Storage URL in production
+      duration: durationMillis / 1000, // Store in seconds
+      userId: user.id,
+      username: user.username,
+      timestamp: new Date(),
+      read: [user.id],
+    };
+    // Mock: await db.collection('challenges').doc(challengeId).collection('messages').add(messageData);
+    console.log('Voice message sent:', messageData);
+    flatListRef.current?.scrollToEnd({ animated: true });
+  }, [user.id, user.username, challengeId, flatListRef, getAudioDuration]);
+
+  const stopRecording = useCallback(async () => {
+    if (!recordingRef.current) return;
+    clearInterval(recordingInterval.current);
+    recordingInterval.current = null;
+    progress.stopAnimation();
+    await recordingRef.current.stopAndUnloadAsync();
+    const uri = recordingRef.current.getURI();
+    recordingRef.current = null;
+    setIsRecording(false);
+    setRecordingDuration(0);
+    sendVoiceMessage(uri);
+  }, [progress, sendVoiceMessage]);
 
   useEffect(() => {
-    const unsubscribe = db
-      .collection('challenges')
-      .doc(challengeId)
-      .onSnapshot(doc => {
-        if (doc.exists) {
-          const data = doc.data();
-          const currentTyping = data.typing || {};
-          const activeTypists = Object.entries(currentTyping)
-            .filter(([uid, timestamp]) => uid !== user.id && timestamp && new Date() - new Date(timestamp) < 10000)
-            .map(([uid]) => uid);
-          setTypingUsers(activeTypists.reduce((acc, uid) => ({ ...acc, [uid]: true }), {}));
-        }
-      });
+    const challengeDocRef = doc(collection(db, 'challenges'), challengeId);
+    const unsubscribe = onSnapshot(challengeDocRef, docSnap => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        const currentTyping = data.typing || {};
+        const activeTypists = Object.entries(currentTyping)
+          .filter(([uid, timestamp]) => uid !== user.id && timestamp && new Date() - new Date(timestamp) < 10000)
+          .map(([uid]) => uid);
+        setTypingUsers(activeTypists.reduce((acc, uid) => ({ ...acc, [uid]: true }), {}));
+      }
+    });
 
-    const unsubscribeMessages = db
-      .collection('challenges')
-      .doc(challengeId)
-      .collection('messages')
-      .orderBy('timestamp', 'desc')
-      .limit(50)
-      .onSnapshot(async snapshot => {
+    const messagesQuery = query(collection(doc(collection(db, 'challenges'), challengeId), 'messages'), orderBy('timestamp', 'desc'), limit(50));
+    const unsubscribeMessages = onSnapshot(messagesQuery, async snapshot => {
         const msgList = await Promise.all(snapshot.docs.map(async doc => {
           const data = { id: doc.id, ...doc.data() };
           if (data.type === 'voice') {
@@ -55,8 +86,7 @@ const ChatScreen = ({ route }) => {
         setMessages(msgList.reverse());
         msgList.forEach(async msg => {
           if (msg.userId !== user.id && !msg.read?.includes(user.id)) {
-            const arrayUnion = (await import('firebase/firestore')).arrayUnion;
-            await db.collection('challenges').doc(challengeId).collection('messages').doc(msg.id).update({
+            await updateDoc(doc(collection(doc(collection(db, 'challenges'), challengeId), 'messages'), msg.id), {
               read: arrayUnion(user.id)
             });
             console.log(`Marked message ${msg.id} as read by ${user.id}`);
@@ -69,9 +99,9 @@ const ChatScreen = ({ route }) => {
       unsubscribeMessages();
       if (typingTimeout.current) clearTimeout(typingTimeout.current);
       if (recordingInterval.current) clearInterval(recordingInterval.current);
-      if (recording) stopRecording();
+      if (recordingRef.current) stopRecording();
     };
-  }, [challengeId, user.id]);
+  }, [challengeId, user.id, stopRecording]);
 
   const handleTextChange = (text) => {
     setNewMessage(text);
@@ -90,19 +120,19 @@ const ChatScreen = ({ route }) => {
 
   const startRecording = async () => {
     try {
-      await AV.requestPermissionsAsync();
-      const { status } = await AV.getPermissionsAsync();
+      await AV.Audio.requestPermissionsAsync();
+      const { status } = await AV.Audio.getPermissionsAsync();
       if (status !== 'granted') return;
 
-      await AV.setAudioModeAsync({
+      await AV.Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
       });
 
       const newRecording = new AV.Audio.Recording();
-      await newRecording.prepareToRecordAsync(AV.Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY);
+      await newRecording.prepareToRecordAsync(AV.Audio.RecordingOptionsPresets.HIGH_QUALITY);
       await newRecording.startAsync();
-      setRecording(newRecording);
+      recordingRef.current = newRecording;
       setIsRecording(true);
       setRecordingDuration(0);
       progress.setValue(0);
@@ -126,42 +156,6 @@ const ChatScreen = ({ route }) => {
     }
   };
 
-  const stopRecording = async () => {
-    if (!recording) return;
-    clearInterval(recordingInterval.current);
-    recordingInterval.current = null;
-    progress.stopAnimation();
-    await recording.stopAndUnloadAsync();
-    const uri = recording.getURI();
-    setRecording(null);
-    setIsRecording(false);
-    setRecordingDuration(0);
-    sendVoiceMessage(uri);
-  };
-
-  const getAudioDuration = async (uri) => {
-    const { sound } = await AV.Audio.Sound.createAsync({ uri });
-    const status = await sound.getStatusAsync();
-    await sound.unloadAsync();
-    return status;
-  };
-
-  const sendVoiceMessage = async (uri) => {
-    const { durationMillis } = await getAudioDuration(uri);
-    const messageData = {
-      type: 'voice',
-      uri: uri, // Mock; use Firebase Storage URL in production
-      duration: durationMillis / 1000, // Store in seconds
-      userId: user.id,
-      username: user.username,
-      timestamp: new Date(),
-      read: [user.id],
-    };
-    // Mock: await db.collection('challenges').doc(challengeId).collection('messages').add(messageData);
-    console.log('Voice message sent:', messageData);
-    flatListRef.current?.scrollToEnd({ animated: true });
-  };
-
   const sendMessage = async () => {
     if (!newMessage.trim()) return;
     const messageData = {
@@ -171,10 +165,7 @@ const ChatScreen = ({ route }) => {
       timestamp: new Date(),
       read: [user.id], // Initial read by sender
     };
-    await db.collection('challenges')
-      .doc(challengeId)
-      .collection('messages')
-      .add(messageData);
+    await addDoc(collection(doc(collection(db, 'challenges'), challengeId), 'messages'), messageData);
     console.log('Message sent:', messageData);
     setNewMessage('');
     if (typingTimeout.current) {

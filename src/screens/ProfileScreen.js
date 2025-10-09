@@ -1,5 +1,6 @@
 import { useContext } from "react";
-import { Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 
 export default function Current_User_Account(props) {
@@ -45,7 +46,7 @@ export default function Current_User_Account(props) {
       <View style={styles.content}>
         <Image source={{ uri: profileUser.avatar }} style={styles.realAvatar} />
         <Text style={styles.name}>{profileUser.username || '@you'}</Text>
-        <Text style={styles.meta}>Stone: {profileUser.stones} 🪨  •  Level: {profileUser.level}  •  Streak: {profileUser.currentStreak}</Text>
+        <Text style={styles.meta}>Stone: {profileUser.stones} 🪨  •  Level: {profileUser.level}  •  Streak: {profileUser.currentStreak}  •  Completed: {profileUser.totalDaresCompleted}</Text>
 
         <View style={styles.block}><Text>{isOwnProfile ? 'My Dares (placeholder)' : 'Their Dares (placeholder)'}</Text></View>
         <View style={styles.block}><Text>Activity (placeholder)</Text></View>

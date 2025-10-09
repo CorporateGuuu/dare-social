@@ -1,7 +1,8 @@
 import * as ImagePicker from 'expo-image-picker';
 import * as Notifications from 'expo-notifications';
 import React, { useContext, useEffect, useState } from 'react';
-import { Animated, FlatList, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { submitProof, tallyVotes } from '../utils/votingUtils';
 import VotingModal from '../components/VotingModal';
 import { AuthContext } from '../context/AuthContext';

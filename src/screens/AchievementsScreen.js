@@ -1,12 +1,12 @@
 import { useContext } from 'react';
-import { Animated, FlatList, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
-import { useFadeIn, useSlideUp, useStaggeredList } from '../hooks/useAnimations';
+import { useFadeIn, useStaggeredList } from '../hooks/useAnimations';
 
 const AchievementsScreen = () => {
   const { user } = useContext(AuthContext);
   const fadeAnim = useFadeIn(600);
-  const slideAnim = useSlideUp(50, 600);
 
   // Available badges with unlock conditions
   const allBadges = [

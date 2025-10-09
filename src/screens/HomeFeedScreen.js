@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, FlatList, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, FlatList, Image, StyleSheet, Text, TextInput, TouchableOpacity, View, useColorScheme } from "react-native";
 import PlaceholderCard from "../components/PlaceholderCard";
 import { searchUsers } from "../lib/firebase";
 
@@ -7,6 +7,9 @@ import { searchUsers } from "../lib/firebase";
 const getImageStyle = () => ({ width: 231, height: 350, borderRadius: 8 });
 
 export default function HomeFeedScreen({ navigation }) {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
@@ -77,6 +80,8 @@ export default function HomeFeedScreen({ navigation }) {
   );
 
   if (loading) return <ActivityIndicator style={{ flex: 1 }} />;
+
+  const styles = getStyles(isDark);
 
   return (
     <View style={styles.container}>
@@ -205,9 +210,9 @@ export default function HomeFeedScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff", padding: 16 },
-  header: { flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: '#fff', marginBottom: 0 },
+const getStyles = (isDark) => StyleSheet.create({
+  container: { flex: 1, padding: 16 },
+  header: { flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: isDark ? '#000' : '#fff', marginBottom: 0 },
   logo: { flex: 1, textAlign: 'center', fontSize: 24 },
   bestFriendsSection: { marginBottom: 16 },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 8 },

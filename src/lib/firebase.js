@@ -1,12 +1,6 @@
-import { getApp } from "firebase/app";
-import { onAuthStateChanged, signInAnonymously } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
-import { getFunctions, httpsCallable } from "firebase/functions";
+import { httpsCallable } from "firebase/functions";
+import { functions } from "../config/firebase";
 import { USE_MOCK } from "../hooks/useDares";
-
-const app = getApp();
-export const db = getFirestore(app);
-export const functions = getFunctions(app);
 
 const delay = (ms) => new Promise((r) => setTimeout(r, ms));
 

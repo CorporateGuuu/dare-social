@@ -1,5 +1,5 @@
-import { initializeApp } from "firebase/app";
-import { initializeAuth, getReactNativePersistence, onAuthStateChanged, signInAnonymously } from "firebase/auth";
+import { initializeApp, getApp, getApps } from "firebase/app";
+import { initializeAuth, getAuth, getReactNativePersistence, onAuthStateChanged, signInAnonymously } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getFunctions, httpsCallable, connectFunctionsEmulator } from "firebase/functions";
 import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
@@ -14,10 +14,20 @@ const firebaseConfig = {
   appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
 };
 
-const app = initializeApp(firebaseConfig);
-export const auth = initializeAuth(app, {
-  persistence: getReactNativePersistence(ReactNativeAsyncStorage)
-});
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+
+// Initialize auth only once - prevent HMR reinitialization
+let auth;
+try {
+  auth = initializeAuth(app, {
+    persistence: getReactNativePersistence(ReactNativeAsyncStorage)
+  });
+} catch (error) {
+  console.warn('Auth already initialized:', error);
+  auth = getAuth(app);
+}
+export { auth };
+
 export const db = getFirestore(app);
 export const functions = getFunctions(app);
 

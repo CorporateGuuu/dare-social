@@ -16,7 +16,6 @@ export function useRealtimeLeaderboard() {
     const unsub = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map((doc, idx) => ({
         uid: doc.id,
-        rank: idx + 1,
         ...doc.data(),
       }));
       setUsers(data);
