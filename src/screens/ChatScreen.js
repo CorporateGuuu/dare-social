@@ -1,4 +1,4 @@
-import * as AV from 'expo-av';
+import { Audio } from 'expo-audio';
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -25,7 +25,7 @@ const ChatScreen = ({ route }) => {
   const recordingRef = useRef(null);
 
   const getAudioDuration = useCallback(async (uri) => {
-    const { sound } = await AV.Audio.Sound.createAsync({ uri });
+    const { sound } = await Audio.Sound.createAsync({ uri });
     const status = await sound.getStatusAsync();
     await sound.unloadAsync();
     return status;
@@ -120,17 +120,17 @@ const ChatScreen = ({ route }) => {
 
   const startRecording = async () => {
     try {
-      await AV.Audio.requestPermissionsAsync();
-      const { status } = await AV.Audio.getPermissionsAsync();
+      await Audio.requestPermissionsAsync();
+      const { status } = await Audio.getPermissionsAsync();
       if (status !== 'granted') return;
 
-      await AV.Audio.setAudioModeAsync({
+      await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
       });
 
-      const newRecording = new AV.Audio.Recording();
-      await newRecording.prepareToRecordAsync(AV.Audio.RecordingOptionsPresets.HIGH_QUALITY);
+      const newRecording = new Audio.Recording();
+      await newRecording.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
       await newRecording.startAsync();
       recordingRef.current = newRecording;
       setIsRecording(true);
@@ -177,8 +177,9 @@ const ChatScreen = ({ route }) => {
   };
 
   const playVoiceMessage = async (uri) => {
-    const { sound } = await AV.Audio.Sound.createAsync({ uri });
+    const { sound } = await Audio.Sound.createAsync({ uri });
     await sound.playAsync();
+    await sound.unloadAsync();
   };
 
   const transcribeVoiceMessage = async (messageId, uri) => {
