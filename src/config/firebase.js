@@ -1,8 +1,8 @@
-import { initializeApp, getApp, getApps } from "firebase/app";
-import { initializeAuth, getAuth, getReactNativePersistence, onAuthStateChanged, signInAnonymously } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
-import { getFunctions, httpsCallable, connectFunctionsEmulator } from "firebase/functions";
 import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
+import { getApp, getApps, initializeApp } from "firebase/app";
+import { getAuth, getReactNativePersistence, initializeAuth, onAuthStateChanged, signInAnonymously } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
+import { connectFunctionsEmulator, getFunctions, httpsCallable } from "firebase/functions";
 
 // TODO: replace with your real config
 const firebaseConfig = {
@@ -26,6 +26,7 @@ try {
   console.warn('Auth already initialized:', error);
   auth = getAuth(app);
 }
+
 export { auth };
 
 export const db = getFirestore(app);

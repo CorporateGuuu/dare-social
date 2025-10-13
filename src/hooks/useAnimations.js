@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Animated, Easing, PanResponder } from 'react-native';
-import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
+// import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
+import * as Haptics from 'expo-haptics';
 
 // Options for haptic feedback
 const hapticOptions = {
@@ -159,7 +160,7 @@ export const useSwipeGesture = (onSwipeLeft, onSwipeRight, threshold = 100) => {
             friction: 10,
             useNativeDriver: false,
           }).start(() => {
-            ReactNativeHapticFeedback.trigger('clockTick', hapticOptions); // Android tick pattern
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); // Cross-platform heavy impact
             pan.setValue({ x: 0, y: 0 }); // Reset
             if (onSwipeRight) onSwipeRight();
           });
@@ -170,7 +171,7 @@ export const useSwipeGesture = (onSwipeLeft, onSwipeRight, threshold = 100) => {
             friction: 10,
             useNativeDriver: false,
           }).start(() => {
-            ReactNativeHapticFeedback.trigger('impactHeavy', hapticOptions); // Cross-platform heavy impact
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); // Cross-platform heavy impact
             pan.setValue({ x: 0, y: 0 }); // Reset
             if (onSwipeLeft) onSwipeLeft();
           });
