@@ -83,8 +83,8 @@ function App() {
   return (
     <AuthProvider>
       <AuthContext.Consumer>
-        {({ user, isLoading }) => {
-          if (isLoading) return (
+        {({ user, loading }) => {
+          if (loading) return (
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
               <Text>Loading...</Text>
             </View>

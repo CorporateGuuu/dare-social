@@ -1,6 +1,6 @@
 import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 import { getApp, getApps, initializeApp } from "firebase/app";
-import { getAuth, getReactNativePersistence, initializeAuth, onAuthStateChanged, signInAnonymously } from "firebase/auth";
+import { getAuth, getReactNativePersistence, initializeAuth, onAuthStateChanged } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { connectFunctionsEmulator, getFunctions, httpsCallable } from "firebase/functions";
 
@@ -26,7 +26,7 @@ try {
   console.warn('Auth already initialized:', error);
   auth = getAuth(app);
 }
-
+console.log(auth)
 export { auth };
 
 export const db = getFirestore(app);
@@ -42,12 +42,15 @@ if (__DEV__) {
 
 export async function ensureSignedIn() {
   return new Promise((resolve) => {
+    const currentUser = auth.currentUser;
+    if (currentUser) {
+      resolve(currentUser);
+    }
     const unsub = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        await signInAnonymously(auth);
+      if (user) {
+        unsub();
+        resolve(user);
       }
-      unsub();
-      resolve(auth.currentUser);
     });
   });
 }

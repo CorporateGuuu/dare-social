@@ -9,8 +9,8 @@ import AchievementsScreen from '../screens/AchievementsScreen';
 import ChallengesScreen from '../screens/ChallengesScreen';
 import ChatScreen from '../screens/ChatScreen';
 import CompleteDareScreen from '../screens/CompleteDareScreen';
-import Create_Challenge_Home from '../screens/CreateChallengeScreen';
 import CreateChallengeFormScreen from '../screens/CreateChallengeFormScreen';
+import Create_Challenge_Home from '../screens/CreateChallengeScreen';
 import DareDetailsScreen from '../screens/DareDetailsScreen';
 import Frame_Market from '../screens/FrameMarketScreen';
 import HomeFeedScreen from '../screens/HomeFeedScreen';
@@ -68,8 +68,9 @@ function MainTabs() {
 }
 
 const RootNavigator = ({ user }) => {
+  console.log(user ? "Main" : "LoginScreen")
   return (
-    <Stack.Navigator initialRouteName={user ? "Main" : "Onboarding"}>
+    <Stack.Navigator initialRouteName={user ? "Main" : "LoginScreen"}>
       <Stack.Screen name="Onboarding" component={OnboardingScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Main" component={MainTabs} options={{ headerShown: false }} />
       <Stack.Screen name="DareDetails" component={DareDetailsScreen} />
