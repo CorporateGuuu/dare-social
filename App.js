@@ -1,104 +1,130 @@
-import { NavigationContainer } from "@react-navigation/native";
-import * as Notifications from "expo-notifications";
-import { useEffect, useRef } from "react";
-import { Text, View } from "react-native";
-import { AuthContext, AuthProvider } from "./src/context/AuthContext";
+import React, { useContext, useState, useEffect } from "react";
+import { NavigationContainer } from '@react-navigation/native';
+import { AuthProvider, AuthContext } from "./src/context/AuthContext";
+import { getUserReferralData, generateReferralCode } from "./src/services/referralService";
+import { database, db } from "./src/config/firebase";
+import { onValue, ref, update } from 'firebase/database';
+import { onSnapshot, doc } from 'firebase/firestore';
 import RootNavigator from "./src/navigation/RootNavigator";
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
+const AppContext = React.createContext();
 
-function App() {
-  const notificationListener = useRef();
-  const responseListener = useRef();
+const AppProvider = ({ children }) => {
+  const { user } = useContext(AuthContext);
+  const [userData, setUserData] = useState({
+    stones: 0,
+    transactions: [],
+    referrals: { code: null, sent: 0, successful: 0 },
+    loginStreak: { currentStreak: 0, maxStreak: 0, totalLogins: 0 },
+    postStats: { totalPosts: 0, rewardedPosts: 0, totalPostEarnings: 0, dailyPostCount: 0 },
+  });
 
+  const [postStats, setPostStats] = useState({
+    totalPosts: 0,
+    rewardedPosts: 0,
+    totalPostEarnings: 0,
+    dailyPostCount: 0,
+  });
+
+  // Sync user data with Firebase Realtime Database
   useEffect(() => {
-    // Register for push notifications
-    registerForPushNotificationsAsync().then(token => {
-      console.log('Push Token:', token);
-      // Send token to backend (mock)
-      // firebase.firestore().collection('users').doc(user.id).update({ pushToken: token });
-    });
+    if (user?.id) {
+      const userRef = ref(database, `users/${user.id}`);
 
-    // Listen for incoming notifications
-    notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
-      console.log('Notification received:', notification);
-      // Update UI (e.g., badge)
-    });
+      const unsubscribe = onValue(userRef, (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          setUserData(prev => ({
+            ...prev,
+            stones: data.stonesBalance || 0,
+            transactions: data.transactions || [],
+            referrals: data.referrals || { code: null, sent: 0, successful: 0 },
+            loginStreak: data.loginStreak || { currentStreak: 0, maxStreak: 0, totalLogins: 0 },
+          }));
+        }
+      });
 
-    // Handle notification taps and actions
-    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
-      const { notification, actionIdentifier } = response;
-      const { data } = notification.request.content;
-
-      console.log('Notification response:', { actionIdentifier, data });
-
-      // Handle different actions
-      if (actionIdentifier === 'ACCEPT_VOTE') {
-        console.log('User accepted the vote from notification');
-        // Handle vote acceptance (could automatically vote yes or open voting modal)
-        // navigation.navigate('Challenges', { focusChallenge: data.dareId });
-      } else if (actionIdentifier === 'VIEW_CHALLENGE') {
-        console.log('User wants to view challenge from notification');
-        // navigation.navigate('Challenges', { focusChallenge: data.dareId });
-      } else if (actionIdentifier === 'VIEW_WINNER') {
-        console.log('User wants to view winner from notification');
-        // navigation.navigate('Challenges', { focusChallenge: data.dareId, showWinner: true });
-      } else if (actionIdentifier === 'CREATE_NEW') {
-        console.log('User wants to create new challenge from notification');
-        // navigation.navigate('CreateChallengeForm');
-      } else {
-        // Default tap - navigate to Challenges screen
-        // navigation.navigate('Challenges');
-        console.log('Notification tapped - navigate to challenges');
-      }
-    });
-
-    return () => {
-      // Cleanup not needed - Expo notifications auto-cleanup subscriptions
-      // Modern versions handle cleanup automatically
-    };
-  }, []);
-
-  async function registerForPushNotificationsAsync() {
-    const { status: existingStatus } = await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
-    if (existingStatus !== 'granted') {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
+      return () => unsubscribe();
     }
-    if (finalStatus !== 'granted') {
-      alert('Failed to get push token for push notification!');
-      return;
+  }, [user?.id]);
+
+  // Listen to post stats
+  useEffect(() => {
+    if (user?.id) {
+      const unsubscribe = onSnapshot(doc(db, 'users', user.id), (doc) => {
+        const data = doc.data();
+        if (data?.postStats) {
+          setPostStats(data.postStats);
+        }
+      });
+      return unsubscribe;
     }
-    const token = (await Notifications.getExpoPushTokenAsync()).data;
-    return token;
-  }
+  }, [user?.id]);
+
+  // Update user data (triggers Cloud Function)
+  const updateUserData = (updates) => {
+    if (user?.id) {
+      update(ref(database, `users/${user.id}`), updates);
+    }
+  };
+
+  const fetchUserReferrals = async () => {
+    try {
+      const referralData = await getUserReferralData();
+      setUserData(prev => ({
+        ...prev,
+        referrals: {
+          ...prev.referrals,
+          ...referralData
+        }
+      }));
+    } catch (error) {
+      console.error('Error fetching referral data:', error);
+    }
+  };
+
+  const processReferralReward = async (rewardAmount) => {
+    // Implement referral reward processing logic
+    console.log('Processing referral reward:', rewardAmount);
+    // This could update user stones or other rewards via updateUserData
+  };
 
   return (
-    <AuthProvider>
-      <AuthContext.Consumer>
-        {({ user, isLoading }) => {
-          if (isLoading) return (
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-              <Text>Loading...</Text>
-            </View>
-          );
+    <AppContext.Provider value={{
+      ...userData,
+      postStats,
+      setUserData: updateUserData,
+      generateReferralCode,
+      processReferralReward,
+      fetchUserReferrals,
+      // Keep legacy referral methods for compatibility
+      referrals: userData.referrals,
+      setReferrals: (updates) => setUserData(prev => ({
+        ...prev,
+        referrals: { ...prev.referrals, ...updates }
+      }))
+    }}>
+      {children}
+    </AppContext.Provider>
+  );
+};
 
-          return (
-            <NavigationContainer>
-              <RootNavigator user={user} />
-            </NavigationContainer>
-          );
-        }}
-      </AuthContext.Consumer>
-    </AuthProvider>
+function AppContent() {
+  const { user } = useContext(AuthContext);
+  return (
+    <AppProvider>
+      <NavigationContainer>
+        <RootNavigator user={user} />
+      </NavigationContainer>
+    </AppProvider>
   );
 }
 
-export default App;
+export { AppContext };
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  );
+}

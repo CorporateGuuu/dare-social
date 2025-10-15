@@ -3,9 +3,11 @@ import { Animated, FlatList, StyleSheet, Text, TouchableOpacity, View } from 're
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import { useFadeIn, useStaggeredList } from '../hooks/useAnimations';
+import { useBadges } from '../hooks/useBadges';
 
 const AchievementsScreen = () => {
   const { user } = useContext(AuthContext);
+  const { badges, stats } = useBadges();
   const fadeAnim = useFadeIn(600);
 
   // Available badges with unlock conditions
@@ -49,7 +51,7 @@ const AchievementsScreen = () => {
   );
 
   const renderBadge = ({ item, index }) => {
-    const isUnlocked = user?.badges?.includes(item.id);
+    const isUnlocked = badges.some(badge => badge.id === item.id);
     return (
       <Animated.View style={[
         styles.badgeCard,
@@ -67,9 +69,9 @@ const AchievementsScreen = () => {
     <SafeAreaView style={styles.container}>
       <Animated.View style={[styles.header, { opacity: fadeAnim }]}>
         <View style={styles.stats}>
-          <Text style={styles.statText}>Level {user?.level || 1}</Text>
-          <Text style={styles.statText}>{user?.xp || 0} XP</Text>
-          <Text style={styles.statText}>{user?.currentStreak || 0} Day Streak</Text>
+          <Text style={styles.statText}>Level {stats?.level || user?.level || 1}</Text>
+          <Text style={styles.statText}>{stats?.xp || user?.xp || 0} XP</Text>
+          <Text style={styles.statText}>{stats?.currentStreak || user?.currentStreak || 0} Day Streak</Text>
         </View>
       </Animated.View>
 

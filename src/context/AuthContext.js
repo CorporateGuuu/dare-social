@@ -39,7 +39,7 @@ export const AuthProvider = ({ children }) => {
               ...userData
             });
           } else {
-            // Create user document if it doesn't exist
+            // User document should be created on signUp, but if missing, set default
             setUser({
               id: uid,
               username: `@user_${uid.slice(0, 6)}`,
@@ -60,11 +60,8 @@ export const AuthProvider = ({ children }) => {
 
         return () => unsubscribeUser();
       } else {
-        signInAnonymously(auth).catch((error) => {
-          console.error('Anonymous sign in failed:', error);
-          setUser(null);
-          setLoading(false);
-        });
+        setUser(null);
+        setLoading(false);
       }
     });
 

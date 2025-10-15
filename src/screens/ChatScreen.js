@@ -1,341 +1,123 @@
-import { Audio } from 'expo-audio';
-import { useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { collection, doc, addDoc, updateDoc, arrayUnion, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
-import { OPENAI_API_KEY, WHISPER_API_URL } from '../constants/api';
+import React, { useContext, useState, useRef, useEffect } from 'react';
+import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { AuthContext } from '../context/AuthContext';
-import { useFadeIn, useSlideUp } from '../hooks/useAnimations';
-import { db } from '../config/firebase';
+import { database } from '../config/firebase';
+import { onValue, ref, push } from 'firebase/database';
+import { Ionicons } from '@expo/vector-icons';
 
-const ChatScreen = ({ route }) => {
-  const { user, setTyping } = useContext(AuthContext);
-  const { challengeId } = route.params || {};
-  const fadeAnim = useFadeIn(500);
-  const slideAnim = useSlideUp(50, 500);
+const ChatScreen = ({ route, navigation }) => {
+  const { chatId, user } = route.params;
+  const { user: authUser } = useContext(AuthContext);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
-  const [typingUsers, setTypingUsers] = useState({});
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordingDuration, setRecordingDuration] = useState(0);
-  const [progress] = useState(new Animated.Value(0));
-  const flatListRef = useRef();
-  const typingTimeout = useRef(null);
-  const recordingInterval = useRef(null);
-  const recordingRef = useRef(null);
+  const flatListRef = useRef(null);
 
-  const getAudioDuration = useCallback(async (uri) => {
-    const { sound } = await Audio.Sound.createAsync({ uri });
-    const status = await sound.getStatusAsync();
-    await sound.unloadAsync();
-    return status;
-  }, []);
-
-  const sendVoiceMessage = useCallback(async (uri) => {
-    const { durationMillis } = await getAudioDuration(uri);
-    const messageData = {
-      type: 'voice',
-      uri: uri, // Mock; use Firebase Storage URL in production
-      duration: durationMillis / 1000, // Store in seconds
-      userId: user.id,
-      username: user.username,
-      timestamp: new Date(),
-      read: [user.id],
-    };
-    // Mock: await db.collection('challenges').doc(challengeId).collection('messages').add(messageData);
-    console.log('Voice message sent:', messageData);
-    flatListRef.current?.scrollToEnd({ animated: true });
-  }, [user.id, user.username, challengeId, flatListRef, getAudioDuration]);
-
-  const stopRecording = useCallback(async () => {
-    if (!recordingRef.current) return;
-    clearInterval(recordingInterval.current);
-    recordingInterval.current = null;
-    progress.stopAnimation();
-    await recordingRef.current.stopAndUnloadAsync();
-    const uri = recordingRef.current.getURI();
-    recordingRef.current = null;
-    setIsRecording(false);
-    setRecordingDuration(0);
-    sendVoiceMessage(uri);
-  }, [progress, sendVoiceMessage]);
+  const userId = authUser?.uid || 'me'; // Fallback if not loaded
 
   useEffect(() => {
-    const challengeDocRef = doc(collection(db, 'challenges'), challengeId);
-    const unsubscribe = onSnapshot(challengeDocRef, docSnap => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        const currentTyping = data.typing || {};
-        const activeTypists = Object.entries(currentTyping)
-          .filter(([uid, timestamp]) => uid !== user.id && timestamp && new Date() - new Date(timestamp) < 10000)
-          .map(([uid]) => uid);
-        setTypingUsers(activeTypists.reduce((acc, uid) => ({ ...acc, [uid]: true }), {}));
+    const messagesRef = ref(database, `chats/${chatId}/messages`);
+
+    const unsubscribe = onValue(messagesRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const msgList = Object.values(data).map(msg => ({
+          id: msg.id,
+          sender: msg.sender,
+          text: msg.text,
+          timestamp: msg.timestamp,
+        }));
+        setMessages(msgList);
+      } else {
+        setMessages([]);
       }
     });
 
-    const messagesQuery = query(collection(doc(collection(db, 'challenges'), challengeId), 'messages'), orderBy('timestamp', 'desc'), limit(50));
-    const unsubscribeMessages = onSnapshot(messagesQuery, async snapshot => {
-        const msgList = await Promise.all(snapshot.docs.map(async doc => {
-          const data = { id: doc.id, ...doc.data() };
-          if (data.type === 'voice') {
-            const { durationMillis } = await getAudioDuration(data.uri);
-            return { ...data, duration: durationMillis / 1000 }; // Convert to seconds
-          }
-          return data;
-        }));
-        setMessages(msgList.reverse());
-        msgList.forEach(async msg => {
-          if (msg.userId !== user.id && !msg.read?.includes(user.id)) {
-            await updateDoc(doc(collection(doc(collection(db, 'challenges'), challengeId), 'messages'), msg.id), {
-              read: arrayUnion(user.id)
-            });
-            console.log(`Marked message ${msg.id} as read by ${user.id}`);
-          }
-        });
-      });
+    return () => unsubscribe();
+  }, [chatId]);
 
-    return () => {
-      unsubscribe();
-      unsubscribeMessages();
-      if (typingTimeout.current) clearTimeout(typingTimeout.current);
-      if (recordingInterval.current) clearInterval(recordingInterval.current);
-      if (recordingRef.current) stopRecording();
-    };
-  }, [challengeId, user.id, stopRecording]);
+  useEffect(() => {
+    flatListRef.current.scrollToEnd({ animated: true });
+  }, [messages]);
 
-  const handleTextChange = (text) => {
-    setNewMessage(text);
-    if (text.length > 0 && !typingTimeout.current) {
-      setTyping(challengeId, true);
-    } else if (text.length === 0 && typingTimeout.current) {
-      clearTimeout(typingTimeout.current);
-      setTyping(challengeId, false);
-    }
-    if (typingTimeout.current) clearTimeout(typingTimeout.current);
-    typingTimeout.current = setTimeout(() => {
-      setTyping(challengeId, false);
-      typingTimeout.current = null;
-    }, 3000); // Stop typing after 3s inactivity
-  };
-
-  const startRecording = async () => {
-    try {
-      await Audio.requestPermissionsAsync();
-      const { status } = await Audio.getPermissionsAsync();
-      if (status !== 'granted') return;
-
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-      });
-
-      const newRecording = new Audio.Recording();
-      await newRecording.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
-      await newRecording.startAsync();
-      recordingRef.current = newRecording;
-      setIsRecording(true);
-      setRecordingDuration(0);
-      progress.setValue(0);
-      Animated.timing(progress, {
-        toValue: 1,
-        duration: 60000, // 60s max duration
-        useNativeDriver: false,
-      }).start();
-      recordingInterval.current = setInterval(() => {
-        setRecordingDuration(prev => {
-          const newDur = prev + 1;
-          if (newDur >= 60) {
-            stopRecording();
-            return 60;
-          }
-          return newDur;
-        });
-      }, 1000);
-    } catch (err) {
-      console.error('Failed to start recording', err);
-    }
-  };
-
-  const sendMessage = async () => {
+  const sendMessage = () => {
     if (!newMessage.trim()) return;
-    const messageData = {
+
+    const messagesRef = ref(database, `chats/${chatId}/messages`);
+    const newMsgRef = push(messagesRef);
+    newMsgRef.set({
+      id: newMsgRef.key,
+      sender: userId,
       text: newMessage,
-      userId: user.id,
-      username: user.username,
-      timestamp: new Date(),
-      read: [user.id], // Initial read by sender
-    };
-    await addDoc(collection(doc(collection(db, 'challenges'), challengeId), 'messages'), messageData);
-    console.log('Message sent:', messageData);
+      timestamp: new Date().toLocaleTimeString(),
+    });
+
+    // Update last message in chat list (optional, for real-time)
+    const chatRef = ref(database, `users/${userId}/chats/${chatId}`);
+    chatRef.update({
+      lastMessage: newMessage,
+      timestamp: new Date().toLocaleTimeString(),
+    });
+
     setNewMessage('');
-    if (typingTimeout.current) {
-      clearTimeout(typingTimeout.current);
-      setTyping(challengeId, false);
-      typingTimeout.current = null;
-    }
-    flatListRef.current?.scrollToEnd({ animated: true });
   };
 
-  const playVoiceMessage = async (uri) => {
-    const { sound } = await Audio.Sound.createAsync({ uri });
-    await sound.playAsync();
-    await sound.unloadAsync();
-  };
-
-  const transcribeVoiceMessage = async (messageId, uri) => {
-    // Update message with loading state
-    setMessages(prev => prev.map(msg => msg.id === messageId ? { ...msg, transcribing: true, transcription: null } : msg));
-
-    try {
-      const response = await fetch(WHISPER_API_URL, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${OPENAI_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          file: uri, // In production, upload to a server or use multipart/form-data
-          model: 'whisper-1',
-          language: 'en', // Default to English; make dynamic if needed
-          response_format: 'text',
-        }),
-      });
-
-      if (!response.ok) throw new Error(`API Error: ${response.status}`);
-      const transcription = await response.text();
-
-      // Update message with transcription
-      setMessages(prev => prev.map(msg => msg.id === messageId ? { ...msg, transcribing: false, transcription } : msg));
-
-      // Optional: Store in Firestore
-      // await db.collection('challenges').doc(challengeId).collection('messages').doc(messageId).update({ transcription });
-    } catch (error) {
-      console.error('Transcription failed:', error);
-      setMessages(prev => prev.map(msg => msg.id === messageId ? { ...msg, transcribing: false, transcription: 'Transcription failed' } : msg));
-    }
-  };
-
-  const renderMessage = ({ item }) => {
-    const isSentByMe = item.userId === user.id;
-    const isReadByAll = item.read.length > 1 || (item.read.length === 1 && isSentByMe);
-
-    return (
-      <View style={[styles.messageContainer, isSentByMe ? styles.sent : styles.received]}>
-        {item.type === 'voice' ? (
-          <View>
-            <TouchableOpacity onPress={() => playVoiceMessage(item.uri)} style={styles.voiceContainer}>
-              <Text style={styles.voiceText}>🎙️ Play Voice Message ({item.duration.toFixed(1)}s)</Text>
-            </TouchableOpacity>
-            {item.transcribing ? (
-              <ActivityIndicator size="small" color="#00FF00" style={styles.transcriptionSpinner} />
-            ) : item.transcription ? (
-              <TouchableOpacity onPress={() => transcribeVoiceMessage(item.id, item.uri)} style={styles.transcribeButton}>
-                <Text style={styles.transcriptionText}>{item.transcription}</Text>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity onPress={() => transcribeVoiceMessage(item.id, item.uri)} style={styles.transcribeButton}>
-                <Text style={styles.transcribeText}>Transcribe to Text</Text>
-              </TouchableOpacity>
-            )}
-            <Text style={styles.timestamp}>{new Date(item.timestamp).toLocaleTimeString()}</Text>
-          </View>
-        ) : (
-          <Text style={styles.messageText}>{item.text}</Text>
-        )}
-        <View style={styles.messageFooter}>
-          {isSentByMe && isReadByAll && <Text style={styles.readReceipt}>✅</Text>}
-          <Text style={styles.timestamp}>{new Date(item.timestamp).toLocaleTimeString()}</Text>
-        </View>
-      </View>
-    );
-  };
-
-  const typingText = Object.keys(typingUsers).length > 0
-    ? `${Object.keys(typingUsers).map(uid => `@${uid}`).join(', ')} is typing...`
-    : '';
-
-  const progressWidth = progress.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0%', '100%'],
-  });
+  const renderMessage = ({ item, index }) => (
+    <Animated.View entering={FadeInDown.delay(index * 50).duration(200)} style={[
+      styles.messageBubble,
+      item.sender === userId ? styles.myMessage : styles.theirMessage
+    ]}>
+      <Text style={styles.messageText}>{item.text}</Text>
+      <Text style={styles.messageTime}>{item.timestamp}</Text>
+    </Animated.View>
+  );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Animated.View style={[styles.header, { opacity: fadeAnim }]}>
-        <Text style={styles.headerText}>Chat for {challengeId}</Text>
-        {typingText && <Text style={styles.typingIndicator}>{typingText}</Text>}
-      </Animated.View>
-      <Animated.View style={[styles.chatContainer, { transform: [{ translateY: slideAnim }] }]}>
-        <FlatList
-          ref={flatListRef}
-          data={messages}
-          renderItem={renderMessage}
-          keyExtractor={item => item.id}
-          inverted
-          style={styles.messageList}
-        />
-      </Animated.View>
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={90}>
+      {/* Top bar */}
+      <View style={styles.topBar}>
+        <TouchableOpacity onPress={() => navigation.goBack()}><Ionicons name="arrow-back" size={24} color="#FFF" /></TouchableOpacity>
+        <Text style={styles.chatTitle}>{user}</Text>
+        <TouchableOpacity><Ionicons name="information-circle-outline" size={24} color="#FFF" /></TouchableOpacity>
+      </View>
+
+      <FlatList
+        ref={flatListRef}
+        data={messages}
+        renderItem={renderMessage}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.messageList}
+      />
+
       <View style={styles.inputContainer}>
-        <TouchableOpacity
-          style={[styles.recordButton, isRecording && styles.recording]}
-          onPressIn={startRecording}
-          onPressOut={stopRecording}
-          disabled={recordingDuration >= 60}
-        >
-          <Animated.View style={[styles.progressBar, { width: isRecording ? progressWidth : '0%' }]} />
-          <Text style={styles.recordText}>{isRecording ? `${recordingDuration}s` : '🎤'}</Text>
-        </TouchableOpacity>
         <TextInput
-          style={styles.input}
+          style={styles.messageInput}
           value={newMessage}
-          onChangeText={handleTextChange}
+          onChangeText={setNewMessage}
           placeholder="Type a message..."
-          placeholderTextColor="#888"
+          placeholderTextColor="#666"
         />
-        <TouchableOpacity style={styles.sendButton} onPress={sendMessage} disabled={!newMessage.trim()}>
-          <Text style={styles.sendText}>Send</Text>
+        <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
+          <Ionicons name="send" size={20} color="#000" />
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1A1A1A' },
-  header: { padding: 15, backgroundColor: '#2A2A2A', alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
-  headerText: { color: 'white', fontSize: 18, fontWeight: 'bold' },
-  chatContainer: { flex: 1, padding: 10 },
-  messageList: { flex: 1 },
-  messageContainer: { maxWidth: '70%', marginVertical: 5, padding: 10, borderRadius: 10 },
-  sent: { backgroundColor: '#00FF00', alignSelf: 'flex-end' },
-  received: { backgroundColor: '#3A3A3A', alignSelf: 'flex-start' },
-  messageText: { color: 'white' },
-  timestamp: { color: '#888', fontSize: 10, marginTop: 5 },
-  messageFooter: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 5 },
-  readReceipt: { color: '#00FF00', fontSize: 12 },
-  inputContainer: { flexDirection: 'row', padding: 10, backgroundColor: '#2A2A2A', alignItems: 'center' },
-  input: { flex: 1, backgroundColor: '#1A1A1A', color: 'white', padding: 10, borderRadius: 20, marginHorizontal: 10 },
-  sendButton: { backgroundColor: '#00FF00', padding: 10, borderRadius: 20, justifyContent: 'center' },
-  sendText: { color: '#1A1A1A', fontWeight: 'bold' },
-  typingIndicator: { color: '#00FF00', fontSize: 12, marginLeft: 10 },
-  voiceContainer: { flexDirection: 'row', alignItems: 'center' },
-  voiceText: { color: 'white', marginRight: 10 },
-  recordButton: { backgroundColor: '#3A3A3A', padding: 10, borderRadius: 20, marginRight: 10, justifyContent: 'center', position: 'relative' },
-  recording: { backgroundColor: '#FF0000' },
-  recordText: { color: 'white', zIndex: 1, position: 'relative' },
-  progressBar: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    bottom: 0,
-    backgroundColor: '#00FF00',
-    borderRadius: 20,
-    zIndex: 0
-  },
-  transcribeButton: { marginTop: 5, padding: 5 },
-  transcribeText: { color: '#888', fontSize: 12 },
-  transcriptionText: { color: 'white', fontSize: 12, fontStyle: 'italic' },
-  transcriptionSpinner: { marginTop: 5 },
+  container: { flex: 1, backgroundColor: '#000000' },
+  topBar: { flexDirection: 'row', alignItems: 'center', padding: 15, backgroundColor: '#111111', borderBottomWidth: 1, borderBottomColor: '#333333' },
+  chatTitle: { flex: 1, color: '#FFFFFF', fontSize: 18, fontWeight: 'bold', textAlign: 'center' },
+  messageList: { padding: 15, flexGrow: 1 },
+  messageBubble: { maxWidth: '70%', borderRadius: 20, padding: 10, marginBottom: 10 },
+  myMessage: { alignSelf: 'flex-end', backgroundColor: '#00D4AA', },
+  theirMessage: { alignSelf: 'flex-start', backgroundColor: '#333333', },
+  messageText: { color: '#FFFFFF', fontSize: 16 },
+  messageTime: { color: '#AAAAAA', fontSize: 12, textAlign: 'right', marginTop: 5 },
+  inputContainer: { flexDirection: 'row', padding: 15, backgroundColor: '#111111', borderTopWidth: 1, borderTopColor: '#333333' },
+  messageInput: { flex: 1, backgroundColor: '#222222', color: '#FFFFFF', borderRadius: 20, paddingHorizontal: 15, paddingVertical: 10, marginRight: 10 },
+  sendButton: { backgroundColor: '#00D4AA', borderRadius: 20, padding: 10, justifyContent: 'center', alignItems: 'center' },
 });
 
 export default ChatScreen;

@@ -58,3 +58,23 @@ export const updateStoneBalance = httpsCallable(functions, "updateStoneBalance")
 export const updateDailyStreak = httpsCallable(functions, "updateDailyStreak");
 export const searchUsers = httpsCallable(functions, "searchUsers");
 export const getFrequentChallengers = httpsCallable(functions, "getFrequentChallengers");
+
+// Mock response for getBet
+const mockGetBet = async (betId) => {
+  await delay(300);
+  return {
+    data: {
+      dareId: "mock-dare-123",
+      participants: [
+        { uid: "user1", jadeStaked: 50, result: "win" },
+        { uid: "user2", jadeStaked: 50, result: "lose" }
+      ],
+      potTotal: 100,
+      status: "resolved",
+      createdAt: new Date().toISOString()
+    }
+  };
+};
+
+// Cloud Functions - with mock support
+export const getBet = USE_MOCK ? mockGetBet : httpsCallable(functions, "getBet");

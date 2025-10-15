@@ -1,12 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Animated, Easing, PanResponder } from 'react-native';
-import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
-
-// Options for haptic feedback
-const hapticOptions = {
-  enableVibrateFallback: true,
-  ignoreAndroidSystemSettings: false,
-};
+import * as Haptics from 'expo-haptics';
 
 export const useFadeIn = (duration = 600, delay = 0) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -19,7 +13,7 @@ export const useFadeIn = (duration = 600, delay = 0) => {
       delay,
       useNativeDriver: true,
     }).start();
-  }, [duration, delay]);
+  }, [duration, delay, fadeAnim]);
 
   return fadeAnim;
 };
@@ -35,7 +29,7 @@ export const useSlideUp = (distance = 50, duration = 600, delay = 0) => {
       delay,
       useNativeDriver: true,
     }).start();
-  }, [distance, duration, delay]);
+  }, [distance, duration, delay, slideAnim]);
 
   return slideAnim;
 };
@@ -60,7 +54,7 @@ export const useSpringScale = (initialValue = 1, trigger = false) => {
         }),
       ]).start();
     }
-  }, [trigger]);
+  }, [trigger, scaleAnim]);
 
   const triggerAnimation = () => scaleAnim.setValue(initialValue); // Reset for next trigger
 
@@ -102,7 +96,7 @@ export const useModalAnimation = (isVisible) => {
         }),
       ]).start();
     }
-  }, [isVisible]);
+  }, [isVisible, fadeAnim, scaleAnim]);
 
   return { fadeAnim, scaleAnim };
 };
@@ -130,7 +124,7 @@ export const useStaggeredList = (itemsLength, duration = 400, delayStep = 150) =
         ]),
       ]).start();
     });
-  }, [itemsLength, duration, delayStep]);
+  }, [itemsLength, duration, delayStep, anims]);
 
   for (let i = 0; i < itemsLength; i++) {
     if (!anims[i]) {
@@ -158,8 +152,8 @@ export const useSwipeGesture = (onSwipeLeft, onSwipeRight, threshold = 100) => {
             tension: 200,
             friction: 10,
             useNativeDriver: false,
-          }).start(() => {
-            ReactNativeHapticFeedback.trigger('clockTick', hapticOptions); // Android tick pattern
+          }).start(async () => {
+            await Haptics.selectionAsync(); // Selection feedback for swipe right
             pan.setValue({ x: 0, y: 0 }); // Reset
             if (onSwipeRight) onSwipeRight();
           });
@@ -169,8 +163,8 @@ export const useSwipeGesture = (onSwipeLeft, onSwipeRight, threshold = 100) => {
             tension: 200,
             friction: 10,
             useNativeDriver: false,
-          }).start(() => {
-            ReactNativeHapticFeedback.trigger('impactHeavy', hapticOptions); // Cross-platform heavy impact
+          }).start(async () => {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); // Heavy impact for swipe left
             pan.setValue({ x: 0, y: 0 }); // Reset
             if (onSwipeLeft) onSwipeLeft();
           });
