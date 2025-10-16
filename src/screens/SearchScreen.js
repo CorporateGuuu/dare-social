@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { ThemedView } from '../../components/themed-view';
+import { useThemeColor } from '../../hooks/use-theme-color';
 
 // Sample screen data - includes all available screens/pages in the app
 const AVAILABLE_SCREENS = [
@@ -28,6 +30,9 @@ export default function SearchScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredScreens, setFilteredScreens] = useState(AVAILABLE_SCREENS);
   const navigation = useNavigation();
+  const backgroundColor = useThemeColor({}, 'background');
+  const textColor = useThemeColor({}, 'text');
+  const borderColor = useThemeColor({}, 'border');
 
   const handleSearch = (query) => {
     setSearchQuery(query);
@@ -87,22 +92,23 @@ export default function SearchScreen() {
 
   const renderScreenItem = ({ item }) => (
     <TouchableOpacity
-      style={styles.screenItem}
+      style={[styles.screenItem, { borderBottomColor: borderColor }]}
       onPress={() => navigateToScreen(item.name)}
     >
       <View style={styles.screenInfo}>
-        <Text style={styles.screenLabel}>{item.label}</Text>
-        <Text style={styles.screenDescription}>{item.description}</Text>
+        <Text style={[styles.screenLabel, { color: textColor }]}>{item.label}</Text>
+        <Text style={[styles.screenDescription, { color: textColor }]}>{item.description}</Text>
       </View>
-      <Text style={styles.arrow}>›</Text>
+      <Text style={[styles.arrow, { color: borderColor }]}>›</Text>
     </TouchableOpacity>
   );
 
   return (
-    <View style={styles.container}>
+    <ThemedView style={styles.container}>
       <TextInput
-        style={styles.searchInput}
+        style={[styles.searchInput, { backgroundColor, color: textColor, borderColor }]}
         placeholder="Search for screens..."
+        placeholderTextColor={textColor}
         value={searchQuery}
         onChangeText={handleSearch}
         autoFocus={true}
@@ -113,20 +119,18 @@ export default function SearchScreen() {
         renderItem={renderScreenItem}
         showsVerticalScrollIndicator={false}
       />
-    </View>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
     paddingHorizontal: 16,
     paddingTop: 60,
   },
   searchInput: {
     height: 40,
-    borderColor: '#ccc',
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 8,
@@ -139,7 +143,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
   },
   screenInfo: {
     flex: 1,
@@ -151,10 +154,8 @@ const styles = StyleSheet.create({
   },
   screenDescription: {
     fontSize: 14,
-    color: '#666',
   },
   arrow: {
     fontSize: 20,
-    color: '#ccc',
   },
 });

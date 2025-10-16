@@ -4,9 +4,45 @@ import { useEffect, useState } from "react";
 export const USE_MOCK = true;
 
 const MOCK_DARES = [
-  { id: "1", title: "Do 20 push-ups", reward: 20, desc: "Film 20 clean reps" },
-  { id: "2", title: "Sing in public", reward: 30, desc: "30s clip in a cafe" },
-  { id: "3", title: "Ice bucket challenge", reward: 25, desc: "Pour and smile!" },
+  {
+    id: "1",
+    title: "Do 20 push-ups",
+    description: "Film 20 clean reps",
+    mediaUrl: "https://example.com/pushups.jpg",
+    creatorId: "mock-creator-1",
+    participants: [],
+    status: "open",
+    wagerType: "1v1",
+    wagerAmount: 20,
+    createdAt: new Date().toISOString(),
+    completedAt: null,
+  },
+  {
+    id: "2",
+    title: "Sing in public",
+    description: "30s clip in a cafe",
+    mediaUrl: "https://example.com/sing.jpg",
+    creatorId: "mock-creator-2",
+    participants: ["mock-user-1"],
+    status: "active",
+    wagerType: "none",
+    wagerAmount: 30,
+    createdAt: new Date().toISOString(),
+    completedAt: null,
+  },
+  {
+    id: "3",
+    title: "Ice bucket challenge",
+    description: "Pour and smile!",
+    mediaUrl: "https://example.com/ice.jpg",
+    creatorId: "mock-creator-3",
+    participants: [],
+    status: "completed",
+    wagerType: "group",
+    wagerAmount: 25,
+    createdAt: new Date().toISOString(),
+    completedAt: new Date().toISOString(),
+  },
 ];
 
 export function useDares() {

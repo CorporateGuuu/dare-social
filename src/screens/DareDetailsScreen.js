@@ -1,6 +1,6 @@
 import { collection, doc, getDoc, onSnapshot } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View, Image } from "react-native";
 import { acceptDare, db } from "../lib/firebase";
 
 export default function DareDetailsScreen({ navigation, route }) {
@@ -47,8 +47,15 @@ export default function DareDetailsScreen({ navigation, route }) {
     <View style={styles.container}>
       <View style={styles.media} />
       <Text style={styles.title}>{dare.title}</Text>
-      <Text style={styles.desc}>{dare.description}</Text>
-      <Text style={styles.reward}>Reward: +{dare.rewardStone} Stone 🪨</Text>
+      <Text style={styles.description}>{dare.description}</Text>
+      <Image source={{ uri: dare.mediaUrl }} style={styles.mediaUrl} />
+      <Text style={styles.creatorId}>Creator: {dare.creatorId}</Text>
+      <Text style={styles.participants}>Participants: {dare.participants.join(', ') || "None"}</Text>
+      <Text style={styles.status}>Status: {dare.status}</Text>
+      <Text style={styles.wagerType}>Wager Type: {dare.wagerType}</Text>
+      <Text style={styles.wagerAmount}>Wager Amount: {dare.wagerAmount} Jade</Text>
+      <Text style={styles.createdAt}>Created: {new Date(dare.createdAt).toLocaleDateString()}</Text>
+      {dare.completedAt && <Text style={styles.completedAt}>Completed: {new Date(dare.completedAt).toLocaleDateString()}</Text>}
 
       <TouchableOpacity style={styles.btnPrimary} onPress={handleAccept} disabled={loading || dare.status === "completed"}>
         {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>
@@ -91,7 +98,15 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff", padding: 16 },
   media: { height: 220, backgroundColor: "#eee", borderRadius: 12, marginBottom: 16 },
   title: { fontSize: 20, fontWeight: "700" },
-  desc: { fontSize: 14, marginTop: 6, marginBottom: 10 },
+  description: { fontSize: 14, marginTop: 6, marginBottom: 10 },
+  mediaUrl: { width: "100%", height: 200, borderRadius: 10, marginVertical: 10 },
+  creatorId: { fontSize: 14, color: "#666", marginBottom: 4 },
+  participants: { fontSize: 14, color: "#666", marginBottom: 4 },
+  status: { fontSize: 14, color: "#666", marginBottom: 4 },
+  wagerType: { fontSize: 14, color: "#666", marginBottom: 4 },
+  wagerAmount: { fontSize: 14, color: "#666", marginBottom: 4 },
+  createdAt: { fontSize: 14, color: "#666", marginBottom: 4 },
+  completedAt: { fontSize: 14, color: "#666", marginBottom: 4 },
   reward: { fontSize: 14, color: "#333", marginBottom: 16 },
   btnPrimary: { backgroundColor: "#111", paddingVertical: 14, borderRadius: 10, marginTop: 8 },
   btnText: { color: "#fff", textAlign: "center", fontWeight: "600" },

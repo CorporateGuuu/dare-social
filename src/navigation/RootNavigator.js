@@ -1,4 +1,4 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
+import Icon from '@expo/vector-icons/Ionicons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
@@ -7,6 +7,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 // Screens
 import AchievementsScreen from '../screens/AchievementsScreen';
 import ChallengesScreen from '../screens/ChallengesScreen';
+import ChatListScreen from '../screens/ChatListScreen';
 import ChatScreen from '../screens/ChatScreen';
 import CompleteDareScreen from '../screens/CompleteDareScreen';
 import CreateChallengeFormScreen from '../screens/CreateChallengeFormScreen';
@@ -16,8 +17,10 @@ import Frame_Market from '../screens/FrameMarketScreen';
 import HomeFeedScreen from '../screens/HomeFeedScreen';
 import LeaderboardScreen from '../screens/LeaderboardScreen';
 import LoginScreen from '../screens/LoginScreen';
+import RegisterScreen from '../screens/RegisterScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
-import Current_User_Account from '../screens/ProfileScreen';
+import ReferralScreen from '../screens/ReferralScreen';
+import PostsScreen from '../screens/PostsScreen';
 import SearchScreen from '../screens/SearchScreen';
 import TrackerScreen from '../screens/TrackerScreen';
 import VoteScreen from '../screens/VoteScreen';
@@ -31,38 +34,47 @@ function MainTabs() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarIcon: ({ color, size }) => {
-          if (route.name === 'HomeFeed') {
-            return <MaterialIcons name="camera" size={size ?? 20} color={color ?? "#333"} />;
+        tabBarIcon: ({ focused, color, size }) => {
+          if (route.name === 'Home') {
+            return <MaterialIcons name="home" size={size ?? 20} color={color ?? "#cccccc"} />;
           }
-          if (route.name === 'Create_Challenge_Home') {
-            return <MaterialIcons name="enhanced-encryption" size={size ?? 20} color={color ?? "#333"} />;
+          if (route.name === 'Challenges') {
+            return <MaterialIcons name="whatshot" size={size ?? 20} color={color ?? "#cccccc"} />;
           }
-          if (route.name === 'Profile') {
-            return <MaterialIcons name="person" size={size ?? 20} color={color ?? "#333"} />;
+          if (route.name === 'Messages') {
+            return <Icon name={focused ? 'chatbubbles' : 'chatbubbles-outline'} size={size ?? 20} color={color ?? "#cccccc"} />;
           }
-          if (route.name === 'Search') {
-            return <Ionicons name="search" size={size ?? 20} color={color ?? "#333"} />;
+          if (route.name === 'Friends') {
+            return <Icon name="people-outline" size={size ?? 20} color={color ?? "#cccccc"} />;
           }
-          const map = {
-            Leaderboard: "trophy-outline",
-          };
-          const iconName = map[route.name];
-          if (iconName) {
-            return <Ionicons name={iconName} size={size ?? 20} color={color ?? "#333"} />;
+          if (route.name === 'group') {
+            return <Icon name="trophy-outline" size={size ?? 20} color={color ?? "#cccccc"} />;
+          }
+          if (route.name === 'Referrals') {
+            return <Icon name={focused ? 'share-social' : 'share-social-outline'} size={size ?? 20} color={color ?? "#cccccc"} />;
           }
           // Fallback icon for undefined routes
-          return <MaterialIcons name="help" size={size ?? 20} color={color ?? "#333"} />;
+          return <MaterialIcons name="help" size={size ?? 20} color={color ?? "#cccccc"} />;
         },
-        tabBarActiveTintColor: "#111",
-        tabBarInactiveTintColor: "#888",
+        tabBarActiveTintColor: "#667eea",
+        tabBarInactiveTintColor: "#666666",
+        tabBarStyle: {
+          backgroundColor: '#000000',
+          borderTopColor: '#333333',
+        },
       })}
     >
-      <Tab.Screen name="HomeFeed" component={HomeFeedScreen} options={{ tabBarLabel: "feed" }} />
-      <Tab.Screen name="Create_Challenge_Home" component={Create_Challenge_Home} options={{ tabBarLabel: "Create" }} />
-      <Tab.Screen name="Leaderboard" component={LeaderboardScreen} options={{ tabBarLabel: "Ranks" }} />
-      <Tab.Screen name="Profile" component={Current_User_Account} options={{ tabBarLabel: "Profile" }} />
-      <Tab.Screen name="Search" component={SearchScreen} options={{ tabBarLabel: "Search" }} />
+      <Tab.Screen name="Home" component={HomeFeedScreen} options={{ tabBarLabel: "Home" }} />
+      <Tab.Screen name="Posts" component={PostsScreen} options={{
+  tabBarIcon: ({ focused, color, size }) => (
+    <Icon name={focused ? 'create' : 'create-outline'} size={size} color={color} />
+  ),
+}} />
+      <Tab.Screen name="Challenges" component={ChallengesScreen} options={{ tabBarLabel: "Challenges" }} />
+      <Tab.Screen name="Messages" component={ChatListScreen} options={{ tabBarLabel: "Messages" }} />
+      <Tab.Screen name="Friends" component={SearchScreen} options={{ tabBarLabel: "Friends" }} />
+      <Tab.Screen name="group" component={LeaderboardScreen} options={{ tabBarLabel: "group" }} />
+      <Tab.Screen name="Referrals" component={ReferralScreen} />
     </Tab.Navigator>
   );
 }
@@ -77,14 +89,17 @@ const RootNavigator = ({ user }) => {
       <Stack.Screen name="CompleteDare" component={CompleteDareScreen} />
       <Stack.Screen name="Challenges" component={ChallengesScreen} />
       <Stack.Screen name="CreateChallenge" component={Create_Challenge_Home} />
-      <Stack.Screen name="ChatScreen" component={ChatScreen} />
+      <Stack.Screen name="ChatList" component={ChatListScreen} />
+      <Stack.Screen name="Chat" component={ChatScreen} />
       <Stack.Screen name="VoteScreen" component={VoteScreen} />
       <Stack.Screen name="Frame_Market" component={Frame_Market} />
       <Stack.Screen name="AchievementsScreen" component={AchievementsScreen} />
       <Stack.Screen name="WinnerScreen" component={WinnerScreen} />
       <Stack.Screen name="LoginScreen" component={LoginScreen} />
+      <Stack.Screen name="Register" component={RegisterScreen} />
       <Stack.Screen name="CreateChallengeForm" component={CreateChallengeFormScreen} />
       <Stack.Screen name="Tracker" component={TrackerScreen} />
+      <Stack.Screen name="Posts" component={PostsScreen} />
     </Stack.Navigator>
   );
 };

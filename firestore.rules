@@ -1,57 +1,36 @@
-// firestore.rules
 rules_version = '2';
 service cloud.firestore {
-  match /databases/{db}/documents {
-
-    function isSignedIn() {
-      return request.auth != null;
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      allow read: if request.auth.uid != null;
+      allow write: if request.auth.uid == userId; // Client can update non-sensitive fields
+      match /transactions/{transactionId} {
+        allow read: if request.auth.uid == userId;
+        allow write: if false; // Only via Cloud Functions
+      }
+      match /earnings/{earningId} {
+        allow read: if request.auth.uid == userId;
+        allow write: if false; // Only via Cloud Functions
+      }
+      match /referral_events/{eventId} {
+        allow read: if request.auth.uid == userId;
+        allow write: if false; // Only via Cloud Functions
+      }
     }
-
-    match /users/{uid} {
-      allow read: if isSignedIn();
-      allow create, update: if isSignedIn() && request.auth.uid == uid;
-    }
-
     match /dares/{dareId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && request.auth.uid == resource.data.creatorId;
+      allow read, write: if request.auth.uid != null; // Extend for sponsorship checks
     }
-
-    match /dares/{dareId}/proofs/{proofId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn() && request.auth.uid == request.resource.data.uid;
-      allow update: if false; // server-only
+    match /sponsors/{sponsorId} {
+      allow read: if true;
+      allow write: if request.auth.uid != null; // Admin only
     }
-
-    match /dares/{dareId}/proofs/{proofId}/votes/{voterId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn() && request.auth.uid == voterId && !exists(/databases/$(db)/documents/dares/$(dareId)/proofs/$(proofId)/votes/$(request.auth.uid));
-      allow update: if false; // server-only
+    match /leaderboards/{leaderboardId} {
+      allow read: if true;
+      allow write: if false; // Only via Cloud Functions
     }
-
-    match /users/{uid}/transactions/{txId} {
-      allow read: if isSignedIn();
-      allow write: if false; // server-only
-    }
-
-    match /leaderboard/{weekId} {
-      allow read: if isSignedIn();
-      allow write: if false; // server-only
-    }
-
-    match /challenges/{challengeId} {
-      allow update: if request.auth != null && request.resource.data.typing[request.auth.uid] != null;
-    }
-
-    match /challenges/{challengeId}/messages/{messageId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null && request.auth.uid == resource.data.userId;
-    }
-
-    match /challenges/{challengeId}/voices/{fileId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == request.resource.metadata.author;
+    match /referral_codes/{code} {
+      allow read: if request.auth.uid != null;
+      allow write: if false; // Only via Cloud Functions
     }
   }
 }

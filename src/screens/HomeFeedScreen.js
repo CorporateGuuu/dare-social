@@ -181,7 +181,7 @@ export default function HomeFeedScreen({ navigation }) {
                 </View>
               )}
               <TouchableOpacity onPress={() => navigation.navigate("DareDetails", { dare: item })}>
-                <PlaceholderCard title={item.title} subtitle={`+${item.rewardStone} Stone 🪨`} />
+                <PlaceholderCard title={item.title} subtitle={`+${item.wagerAmount || item.rewardStone} Jade`} />
               </TouchableOpacity>
               {item.type !== 'ad' && (
                 <View style={styles.commentsContainer}>

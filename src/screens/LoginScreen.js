@@ -1,118 +1,79 @@
-import { useContext, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { AuthContext } from '../context/AuthContext';
+import { useContext, useState } from "react";
+import { Alert, Button, StyleSheet, Text, TextInput, View } from "react-native";
+import { AuthContext } from "../context/AuthContext";
+import { signIn } from "../services/authService";
 
+export default function LoginScreen({ navigation }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const { setUser } = useContext(AuthContext);
 
-const LoginScreen = () => {
-  const { loginWithEmail, registerWithEmail, loading } = useContext(AuthContext);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const handleLogin = async () => {
+    // Mock login for testing
+    if (email === "test@test.com" && password === "test123") {
+      // Set mock user data
+      setUser({
+        id: "mock-user-id",
+        username: "@testuser",
+        stones: 100,
+        xp: 50,
+        level: 2,
+        badges: [],
+        currentStreak: 5,
+        totalDaresCompleted: 10,
+      });
+      navigation.replace("Main");
+      return;
+    }
 
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert("Invalid Email", "Please enter a valid email address.");
+      return;
+    }
 
-  const handleEmailLogin = async () => {
-    setIsSubmitting(true);
-    setError('');
+    if (!password) {
+      Alert.alert("Missing Password", "Please enter your password.");
+      return;
+    }
+
     try {
-      await loginWithEmail(email, password);
+      await signIn(email, password);
+      navigation.replace("Main");
     } catch (error) {
-      setError(error.message);
-    } finally {
-      setIsSubmitting(false);
+      Alert.alert("Login Error", error.message);
     }
   };
 
-  if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator color="#00FF00" size="large" />
-      </View>
-    );
-  }
-  
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Welcome to Dare Social</Text>
+      <Text style={styles.title}>Dare Social</Text>
       <TextInput
+        placeholder="Email (use test@test.com for mock login)"
         style={styles.input}
-        placeholder="Email"
-        placeholderTextColor="#aaa"
         value={email}
         onChangeText={setEmail}
-        autoCapitalize="none"
-        keyboardType="email-address"
       />
       <TextInput
-          style={styles.input}
-          placeholder="Password"
-          placeholderTextColor="#aaa"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
-
-        {error ? <Text style={styles.error}>{error}</Text> : null}
-
-        <TouchableOpacity
-          style={styles.button}
-          onPress={handleEmailLogin}
-          disabled={isSubmitting}
-        >
-          <Text style={styles.buttonText}>
-            {isSubmitting ? 'Signing in...' : 'Login / Register'}
-          </Text>
-        </TouchableOpacity>
-
-        {/* TODO: implement google login */}
-        {/* <TouchableOpacity
-          style={styles.button}
-          onPress={loginWithGoogle}
-          disabled={isSubmitting}
-        >
-          <Text style={styles.buttonText}>
-            {isSubmitting ? 'Signing in...' : 'Login with Google'}
-          </Text>
-        </TouchableOpacity> */}
+        placeholder="Password (use test123 for mock login)"
+        secureTextEntry
+        style={styles.input}
+        value={password}
+        onChangeText={setPassword}
+      />
+      <Button title="Login" onPress={handleLogin} />
+      <Text onPress={() => navigation.navigate("Register")} style={styles.link}>
+        Create an account
+      </Text>
     </View>
 
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#1A1A1A',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: 'white',
-    marginBottom: 20,
-  },
-  input: {
-    width: '100%',
-    height: 48,
-    backgroundColor: '#222',
-    borderRadius: 30,
-    paddingHorizontal: 16,
-    marginBottom: 16,
-    color: 'white',
-  },
-  button: {
-    backgroundColor: '#00FF00',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 30,
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
+  container: { flex: 1, justifyContent: "center", padding: 20 },
+  title: { fontSize: 24, textAlign: "center", marginBottom: 20 },
+  input: { borderWidth: 1, padding: 10, marginBottom: 10, borderRadius: 5 },
+  link: { textAlign: "center", marginTop: 10, color: "blue" }
 });
-
-export default LoginScreen;
