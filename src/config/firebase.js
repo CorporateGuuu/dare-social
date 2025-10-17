@@ -1,22 +1,22 @@
 import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
-import { initializeApp } from "firebase/app";
+import { getApp, getApps, initializeApp } from "firebase/app";
 import { getAuth, getReactNativePersistence, initializeAuth, onAuthStateChanged } from "firebase/auth";
+import { getDatabase } from 'firebase/database';
 import { getFirestore } from "firebase/firestore";
 import { connectFunctionsEmulator, getFunctions, httpsCallable } from "firebase/functions";
 
 // Replace with your Firebase config from console.firebase.google.com
 const firebaseConfig = {
-  apiKey: "your-api-key",
-  authDomain: "your-project.firebaseapp.com",
-  databaseURL: "https://your-project-default-rtdb.firebaseio.com/",
-  projectId: "your-project",
-  storageBucket: "your-project.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abc123"
+  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY || "dummy_api_key",
+  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN || "dummy_auth_domain",
+  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || "dummy_project_id",
+  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET || "dummy_storage_bucket",
+  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "dummy_messaging_sender_id",
+  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID || "dummy_app_id",
+
 };
 
-const app = initializeApp(firebaseConfig);
-export const database = getDatabase(app);
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
 // Initialize auth only once - prevent HMR reinitialization
 let auth;
@@ -31,7 +31,8 @@ try {
 console.log(auth)
 export { auth };
 
-export const db = getFirestore(app);
+export const firestore = getFirestore(app);
+export const database = getDatabase(app);
 export const functions = getFunctions(app);
 
 // optional: connect to local emulator in dev

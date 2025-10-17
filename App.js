@@ -2,7 +2,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { onValue, ref, update } from 'firebase/database';
 import { doc, onSnapshot } from 'firebase/firestore';
 import React, { useContext, useEffect, useState } from "react";
-import { database, db } from "./src/config/firebase";
+import { database, firestore } from "./src/config/firebase";
 import { AuthContext, AuthProvider } from "./src/context/AuthContext";
 import RootNavigator from "./src/navigation/RootNavigator";
 import { generateReferralCode, getUserReferralData } from "./src/services/referralService";
@@ -51,7 +51,7 @@ const AppProvider = ({ children }) => {
   // Listen to post stats
   useEffect(() => {
     if (user?.id) {
-      const unsubscribe = onSnapshot(doc(db, 'users', user.id), (doc) => {
+      const unsubscribe = onSnapshot(doc(firestore, 'users', user.id), (doc) => {
         const data = doc.data();
         if (data?.postStats) {
           setPostStats(data.postStats);
