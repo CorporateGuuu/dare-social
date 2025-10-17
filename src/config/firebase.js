@@ -1,4 +1,5 @@
 import { initializeApp } from 'firebase/app';
+import { getAnalytics } from 'firebase/analytics';
 import { getDatabase } from 'firebase/database';
 import { initializeAuth, getAuth, getReactNativePersistence, onAuthStateChanged, signInAnonymously } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
@@ -7,17 +8,20 @@ import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 
 // Replace with your Firebase config from console.firebase.google.com
 const firebaseConfig = {
-  apiKey: "your-api-key",
-  authDomain: "your-project.firebaseapp.com",
-  databaseURL: "https://your-project-default-rtdb.firebaseio.com/",
-  projectId: "your-project",
-  storageBucket: "your-project.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abc123"
+  apiKey: "AIzaSyBqWXnD-cbovdoeE96atVXwUABFICFliRU",
+  authDomain: "abstrac-8e36e.firebaseapp.com",
+  databaseURL: "https://abstrac-8e36e-default-rtdb.firebaseio.com/",
+  projectId: "abstrac-8e36e",
+  storageBucket: "abstrac-8e36e.firebasestorage.app",
+  messagingSenderId: "630430127671",
+  appId: "1:630430127671:web:6159fcfd806118b15e51b2",
+  measurementId: "G-5RFNQZ7XCQ"
 };
 
 const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 export const database = getDatabase(app);
+export { analytics };
 
 // Initialize auth only once - prevent HMR reinitialization
 let auth;
