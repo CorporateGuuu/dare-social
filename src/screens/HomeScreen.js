@@ -1,26 +1,25 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { useThemeColor } from "../../hooks/use-theme-color";
+import { ThemedView } from "../../components/themed-view";
 
 export default function HomeScreen() {
-  const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
 
-  const styles = createStyles(backgroundColor, textColor);
+  const styles = createStyles(textColor);
 
   return (
-    <View style={styles.container}>
+    <ThemedView style={styles.container}>
       <Text style={styles.text}>Home Screen</Text>
-    </View>
+    </ThemedView>
   );
 }
 
-const createStyles = (backgroundColor, textColor) => StyleSheet.create({
+const createStyles = (textColor) => StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "center",
-    alignItems: "center",
-    backgroundColor
+    alignItems: "center"
   },
   text: {
     color: textColor
