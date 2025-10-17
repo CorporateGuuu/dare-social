@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAnalytics } from 'firebase/analytics';
-import { getDatabase } from 'firebase/database';
+import { getDatabase, connectDatabaseEmulator } from 'firebase/database';
 import { initializeAuth, getAuth, getReactNativePersistence, onAuthStateChanged, signInAnonymously } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getFunctions, httpsCallable, connectFunctionsEmulator } from "firebase/functions";
@@ -19,9 +19,19 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+// Conditionally initialize analytics to prevent errors in unsupported environments
+export let analytics = null;
+(async () => {
+  try {
+    const { isSupported } = await import('firebase/analytics');
+    if (await isSupported()) {
+      analytics = getAnalytics(app);
+    }
+  } catch (error) {
+    console.warn('Analytics not supported in this environment:', error);
+  }
+})();
 export const database = getDatabase(app);
-export { analytics };
 
 // Initialize auth only once - prevent HMR reinitialization
 let auth;
@@ -44,8 +54,11 @@ if (__DEV__) {
     // Only connect once
     console.log('Connecting to Firebase functions emulator...');
     connectFunctionsEmulator(functions, "localhost", 5001);
+
+    console.log('Connecting to Firebase database emulator...');
+    connectDatabaseEmulator(database, "localhost", 9000);
   } catch (error) {
-    console.log('Functions emulator connection failed:', error.message);
+    console.log('Emulator connection failed:', error.message);
   }
 }
 

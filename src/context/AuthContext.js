@@ -12,6 +12,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const unsubscribeAuth = auth.onAuthStateChanged(async (firebaseUser) => {
       if (firebaseUser) {
+        // User is authenticated (already signed in anonymously or with other method)
         const uid = firebaseUser.uid;
         // Update daily streak on login
         // Temporarily commented out to prevent crash
@@ -21,7 +22,7 @@ export const AuthProvider = ({ children }) => {
         //   console.error('Error updating streak:', error);
         // }
 
-        // Listen to user document
+        // Listen to user document with error handling for anonymous users
         const userDocRef = doc(db, 'users', uid);
         const unsubscribeUser = onSnapshot(userDocRef, (docSnap) => {
           if (docSnap.exists()) {
@@ -53,15 +54,38 @@ export const AuthProvider = ({ children }) => {
           }
           setLoading(false);
         }, (error) => {
-          console.error('Error fetching user document:', error);
-          setUser(null);
-          setLoading(false);
+          console.warn('Could not access user document (likely anonymous user, proceeding with defaults):', error.message);
+          // For permission errors, proceed with default user data
+          if (error.code === 'permission-denied') {
+            setUser({
+              id: uid,
+              username: `@user_${uid.slice(0, 6)}`,
+              stones: 0,
+              xp: 0,
+              level: 1,
+              badges: [],
+              currentStreak: 0,
+              totalDaresCompleted: 0,
+            });
+            setLoading(false);
+          } else {
+            console.error('Error fetching user document:', error);
+            setUser(null);
+            setLoading(false);
+          }
         });
 
         return () => unsubscribeUser();
       } else {
-        setUser(null);
-        setLoading(false);
+        // No user authenticated, sign in anonymously for read access
+        try {
+          await signInAnonymously(auth);
+          // The auth state change listener above will handle the new user
+        } catch (error) {
+          console.error('Failed to sign in anonymously:', error);
+          setUser(null);
+          setLoading(false);
+        }
       }
     });
 

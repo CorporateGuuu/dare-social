@@ -16,9 +16,38 @@ service cloud.firestore {
         allow read: if request.auth.uid == userId;
         allow write: if false; // Only via Cloud Functions
       }
+      match /achievement_events/{eventId} {
+        allow read: if request.auth.uid == userId;
+        allow write: if false; // Only via Cloud Functions
+      }
     }
     match /dares/{dareId} {
       allow read, write: if request.auth.uid != null; // Extend for sponsorship checks
+      match /proofs/{proofId} {
+        allow read, write: if request.auth.uid != null;
+      }
+    }
+    match /posts/{postId} {
+      allow read, write: if request.auth.uid != null;
+      match /likes/{userId} {
+        allow read, write: if request.auth.uid == userId || request.auth.uid != null;
+      }
+      match /comments/{commentId} {
+        allow read, write: if request.auth.uid != null;
+      }
+      match /shares/{userId} {
+        allow read, write: if request.auth.uid == userId || request.auth.uid != null;
+      }
+    }
+    match /activities/{activityId} {
+      allow read, write: if request.auth.uid != null;
+    }
+    match /bets/{betId} {
+      allow read, write: if request.auth.uid != null;
+    }
+    match /rewards/{rewardId} {
+      allow read: if request.auth.uid == resource.data.userId;
+      allow write: if false; // Only via Cloud Functions
     }
     match /sponsors/{sponsorId} {
       allow read: if true;

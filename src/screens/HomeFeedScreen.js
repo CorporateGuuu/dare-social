@@ -1,14 +1,19 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, FlatList, Image, StyleSheet, Text, TextInput, TouchableOpacity, View, useColorScheme } from "react-native";
+import { ActivityIndicator, FlatList, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import PlaceholderCard from "../components/PlaceholderCard";
 import { searchUsers } from "../lib/firebase";
+import { useThemeColor } from "../../hooks/use-theme-color";
+import { ThemedView } from "../../components/themed-view";
+import { ThemedText } from "../../components/themed-text";
 
 // Use single ideal proportion for all images/proofs
 const getImageStyle = () => ({ width: 231, height: 350, borderRadius: 8 });
 
 export default function HomeFeedScreen({ navigation }) {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const backgroundColor = useThemeColor({}, 'background');
+  const cardColor = useThemeColor({}, 'card');
+  const textColor = useThemeColor({}, 'text');
+  const accentColor = useThemeColor({}, 'accent');
 
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -68,61 +73,62 @@ export default function HomeFeedScreen({ navigation }) {
   ];
 
   const renderBestFriend = ({ item }) => (
-    <View style={styles.friendItem}>
-      <TouchableOpacity style={styles.createBetIcon} onPress={() => navigation.navigate('CreateChallenge', { opponent: item })}>
-        <Text style={styles.iconText}>+</Text>
+    <ThemedView style={dynamicStyles.friendItem}>
+      <TouchableOpacity style={dynamicStyles.createBetIcon} onPress={() => navigation.navigate('CreateChallenge', { opponent: item })}>
+        <ThemedText style={dynamicStyles.iconText}>+</ThemedText>
       </TouchableOpacity>
-      <Image source={{ uri: item.avatar }} style={styles.avatar} />
-      <Text style={styles.username} numberOfLines={1}>{item.username}</Text>
-      <Text style={styles.record}>{item.record}</Text>
-      <Text style={styles.stonesDiff}>{item.stonesDiff}</Text>
-    </View>
+      <Image source={{ uri: item.avatar }} style={dynamicStyles.avatar} />
+      <ThemedText style={dynamicStyles.username} numberOfLines={1}>{item.username}</ThemedText>
+      <ThemedText style={dynamicStyles.record}>{item.record}</ThemedText>
+      <ThemedText style={dynamicStyles.stonesDiff}>{item.stonesDiff}</ThemedText>
+    </ThemedView>
   );
 
   if (loading) return <ActivityIndicator style={{ flex: 1 }} />;
 
-  const styles = getStyles(isDark);
+  const dynamicStyles = getDynamicStyles(backgroundColor, cardColor, textColor, accentColor);
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.logo}>▲</Text>
+    <ThemedView style={dynamicStyles.container}>
+      <View style={dynamicStyles.header}>
+        <ThemedText style={dynamicStyles.logo}>▲</ThemedText>
       </View>
-      <View style={styles.bestFriendsSection}>
-        <Text style={styles.sectionTitle}>Best Friends</Text>
+      <ThemedView style={dynamicStyles.bestFriendsSection}>
+        <ThemedText style={dynamicStyles.sectionTitle}>Best Friends</ThemedText>
         <FlatList
           data={bestFriends}
           renderItem={renderBestFriend}
           keyExtractor={(item) => item.username}
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.friendsList}
+          contentContainerStyle={dynamicStyles.friendsList}
         />
-      </View>
-      <View style={styles.statsSection}>
-        <Text style={styles.sectionTitle}>Statistics</Text>
-        <View style={styles.statsContainer}>
-          <View style={styles.statRow}>
-            <Text style={styles.statLabel}>Buying Power:</Text>
-            <Text style={styles.statValue}>500 🪨</Text>
+      </ThemedView>
+      <ThemedView style={dynamicStyles.statsSection}>
+        <ThemedText style={dynamicStyles.sectionTitle}>Statistics</ThemedText>
+        <ThemedView style={dynamicStyles.statsContainer}>
+          <View style={dynamicStyles.statRow}>
+            <ThemedText style={dynamicStyles.statLabel}>Buying Power:</ThemedText>
+            <ThemedText style={dynamicStyles.statValue}>500 🪨</ThemedText>
           </View>
-          <View style={styles.statRow}>
-            <Text style={styles.statLabel}>Frozen Assets:</Text>
-            <Text style={styles.statValue}>250 🪨</Text>
+          <View style={dynamicStyles.statRow}>
+            <ThemedText style={dynamicStyles.statLabel}>Frozen Assets:</ThemedText>
+            <ThemedText style={dynamicStyles.statValue}>250 🪨</ThemedText>
           </View>
-          <View style={styles.statRow}>
-            <Text style={styles.statLabel}>Record:</Text>
-            <Text style={styles.statValue}>28-19</Text>
+          <View style={dynamicStyles.statRow}>
+            <ThemedText style={dynamicStyles.statLabel}>Record:</ThemedText>
+            <ThemedText style={dynamicStyles.statValue}>28-19</ThemedText>
           </View>
-          <View style={styles.statRow}>
-            <Text style={styles.statLabel}>Win Rate:</Text>
-            <Text style={styles.statValue}>60%</Text>
+          <View style={dynamicStyles.statRow}>
+            <ThemedText style={dynamicStyles.statLabel}>Win Rate:</ThemedText>
+            <ThemedText style={dynamicStyles.statValue}>60%</ThemedText>
           </View>
-        </View>
-      </View>
+        </ThemedView>
+      </ThemedView>
       <TextInput
-        style={styles.searchBar}
+        style={dynamicStyles.searchBar}
         placeholder="Search users"
+        placeholderTextColor={textColor}
         value={query}
         onChangeText={setQuery}
         onSubmitEditing={handleSearch}
@@ -145,74 +151,80 @@ export default function HomeFeedScreen({ navigation }) {
           const rarity = getRarity(item.id);
           const diamonds = Array.from({ length: rarity }, (_, i) => i);
           return (
-            <View style={styles.postContainer}>
+            <ThemedView style={dynamicStyles.postContainer}>
               {item.type === 'ad' ? (
-                <View style={styles.headerRow}>
+                <View style={dynamicStyles.headerRow}>
                   <TouchableOpacity onPress={() => navigation.navigate("Profile", { user: item.company })}>
-                    <Text style={styles.postUsername}>{item.company.username}</Text>
+                    <ThemedText style={dynamicStyles.postUsername}>{item.company.username}</ThemedText>
                   </TouchableOpacity>
                 </View>
               ) : (
-                <View style={styles.headerRow}>
+                <View style={dynamicStyles.headerRow}>
                   {item.winner && (
                     <TouchableOpacity onPress={() => navigation.navigate("Profile", { user: item.winner })}>
-                      <Text style={styles.postUsername}>{item.winner.username}</Text>
+                      <ThemedText style={dynamicStyles.postUsername}>{item.winner.username}</ThemedText>
                     </TouchableOpacity>
                   )}
-                  <Text style={styles.postHeader}> beat </Text>
+                  <ThemedText style={dynamicStyles.postHeader}> beat </ThemedText>
                   {item.losers && item.losers.length > 0 && (
                     <TouchableOpacity onPress={() => navigation.navigate("Profile", { user: item.losers[0] })}>
-                      <Text style={styles.postUsername}>{item.losers[0].username}</Text>
+                      <ThemedText style={dynamicStyles.postUsername}>{item.losers[0].username}</ThemedText>
                     </TouchableOpacity>
                   )}
-                  {(!item.losers || item.losers.length === 0) && <Text style={styles.postHeader}>loser</Text>}
+                  {(!item.losers || item.losers.length === 0) && <ThemedText style={dynamicStyles.postHeader}>loser</ThemedText>}
                 </View>
               )}
               {item.winnerProof && (
-                <View style={styles.mediaContainer}>
-                  <View style={styles.leftDiamonds}>
-                    {diamonds.map(i => <Text key={i} style={styles.diamond}>♦</Text>)}
+                <View style={dynamicStyles.mediaContainer}>
+                  <View style={dynamicStyles.leftDiamonds}>
+                    {diamonds.map(i => <Text key={i} style={dynamicStyles.diamond}>♦</Text>)}
                   </View>
-                  <View style={styles.rightDiamonds}>
-                    {diamonds.map(i => <Text key={i} style={styles.diamond}>♦</Text>)}
+                  <View style={dynamicStyles.rightDiamonds}>
+                    {diamonds.map(i => <Text key={i} style={dynamicStyles.diamond}>♦</Text>)}
                   </View>
                   <Image source={{ uri: item.winnerProof.mediaUrl }} style={getImageStyle()} />
-                  {item.winnerProof.caption && <Text style={styles.caption}>{item.winnerProof.caption}</Text>}
+                  {item.winnerProof.caption && <ThemedText style={dynamicStyles.caption}>{item.winnerProof.caption}</ThemedText>}
                 </View>
               )}
               <TouchableOpacity onPress={() => navigation.navigate("DareDetails", { dare: item })}>
                 <PlaceholderCard title={item.title} subtitle={`+${item.wagerAmount || item.rewardStone} Jade`} />
               </TouchableOpacity>
               {item.type !== 'ad' && (
-                <View style={styles.commentsContainer}>
-                  <Text style={styles.comments}>Winner: {item.winnerComment}</Text>
-                  <Text style={styles.comments}>Loser: {item.loserComment}</Text>
+                <View style={dynamicStyles.commentsContainer}>
+                  <ThemedText style={dynamicStyles.comments}>Winner: {item.winnerComment}</ThemedText>
+                  <ThemedText style={dynamicStyles.comments}>Loser: {item.loserComment}</ThemedText>
                 </View>
               )}
-              <View style={styles.socialBar}>
-                <View style={styles.socialItem}>
-                  <Text style={styles.icon}>💬</Text>
-                  <Text style={styles.count}>5</Text>
+              <ThemedView style={dynamicStyles.socialBar}>
+                <View style={dynamicStyles.socialItem}>
+                  <Text style={dynamicStyles.icon}>💬</Text>
+                  <ThemedText style={dynamicStyles.count}>5</ThemedText>
                 </View>
-                <View style={styles.socialItem}>
-                  <Text style={styles.icon}>❤️</Text>
-                  <Text style={styles.count}>10</Text>
+                <View style={dynamicStyles.socialItem}>
+                  <Text style={dynamicStyles.icon}>❤️</Text>
+                  <ThemedText style={dynamicStyles.count}>10</ThemedText>
                 </View>
-                <TouchableOpacity style={styles.socialItem} onPress={() => {}}>
-                  <Text style={styles.dots}>• • •</Text>
+                <TouchableOpacity style={dynamicStyles.socialItem} onPress={() => {}}>
+                  <ThemedText style={dynamicStyles.dots}>• • •</ThemedText>
                 </TouchableOpacity>
-              </View>
-            </View>
+              </ThemedView>
+            </ThemedView>
           );
         }}
       />
-    </View>
+    </ThemedView>
   );
 }
 
-const getStyles = (isDark) => StyleSheet.create({
+const getDynamicStyles = (backgroundColor, cardColor, textColor, accentColor) => StyleSheet.create({
   container: { flex: 1, padding: 16 },
-  header: { flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: isDark ? '#000' : '#fff', marginBottom: 0 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: Array.isArray(backgroundColor) ? backgroundColor[0] : backgroundColor,
+    marginBottom: 0
+  },
   logo: { flex: 1, textAlign: 'center', fontSize: 24 },
   bestFriendsSection: { marginBottom: 16 },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 8 },
@@ -220,31 +232,56 @@ const getStyles = (isDark) => StyleSheet.create({
   statsSection: { marginBottom: 16 },
   statsContainer: { marginTop: 10 },
   statRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-  statLabel: { color: 'black', fontSize: 16 },
-  statValue: { color: 'black', fontSize: 16, fontWeight: 'bold' },
+  statLabel: { fontSize: 16 },
+  statValue: { fontSize: 16, fontWeight: 'bold' },
   friendItem: { alignItems: 'center', marginRight: 15, width: 80 },
-  createBetIcon: { position: 'absolute', top: -5, right: -5, backgroundColor: 'blue', width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center', zIndex: 1 },
-  iconText: { color: 'white', fontSize: 12, fontWeight: 'bold' },
+  createBetIcon: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    backgroundColor: accentColor,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1
+  },
+  iconText: { fontSize: 12, fontWeight: 'bold' },
   avatar: { width: 60, height: 60, borderRadius: 30, marginBottom: 5, marginTop: 10 },
-  username: { color: 'black', fontSize: 12, textAlign: 'center', marginBottom: 4 },
-  record: { color: 'black', fontSize: 10, textAlign: 'center', marginBottom: 2 },
-  stonesDiff: { color: 'black', fontSize: 10, fontWeight: 'bold', textAlign: 'center' },
-  searchBar: { borderWidth: 1, borderColor: "#ccc", padding: 8, marginBottom: 16, textAlign: "center" },
+  username: { fontSize: 12, textAlign: 'center', marginBottom: 4 },
+  record: { fontSize: 10, textAlign: 'center', marginBottom: 2 },
+  stonesDiff: { fontSize: 10, fontWeight: 'bold', textAlign: 'center' },
+  searchBar: {
+    borderWidth: 1,
+    borderColor: accentColor,
+    backgroundColor: cardColor,
+    padding: 8,
+    marginBottom: 16,
+    textAlign: "center"
+  },
   postContainer: { marginBottom: 16 },
   postHeader: { fontSize: 16, fontWeight: 'bold', marginBottom: 8, textAlign: 'center' },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-  postUsername: { fontSize: 16, fontWeight: 'bold', color: 'blue', textDecorationLine: 'underline' },
+  postUsername: { fontSize: 16, fontWeight: 'bold', color: accentColor, textDecorationLine: 'underline' },
   mediaContainer: { marginBottom: 8, position: 'relative', alignSelf: 'center' },
   mediaDefault: { width: 231, height: 350, borderRadius: 8 },
   leftDiamonds: { position: 'absolute', left: -20, top: 0, height: 350, flexDirection: 'column', justifyContent: 'space-around' },
   rightDiamonds: { position: 'absolute', right: -20, top: 0, height: 350, flexDirection: 'column', justifyContent: 'space-around' },
-  diamond: { fontSize: 15, color: 'gold' },
+  diamond: { fontSize: 15, color: '#FFD700' },
   caption: { fontSize: 14, marginTop: 4, textAlign: 'center' },
-  socialBar: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', paddingVertical: 8, borderTopWidth: 1, borderColor: '#eee' },
+  socialBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderColor: accentColor
+  },
   socialItem: { alignItems: 'center', flex: 1 },
   icon: { fontSize: 22, padding: 11 },
-  count: { fontSize: 14, color: '#666' },
-  dots: { fontSize: 18, color: '#666' },
+  count: { fontSize: 14 },
+  dots: { fontSize: 18 },
   commentsContainer: { paddingVertical: 4 },
   comments: { fontSize: 14, fontStyle: 'italic', marginVertical: 2 },
 });
