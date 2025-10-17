@@ -48,13 +48,20 @@ const AppProvider = ({ children }) => {
     }
   }, [user?.id]);
 
-  // Listen to post stats
+  // Listen to post stats with error handling
   useEffect(() => {
     if (user?.id) {
       const unsubscribe = onSnapshot(doc(firestore, 'users', user.id), (doc) => {
         const data = doc.data();
         if (data?.postStats) {
           setPostStats(data.postStats);
+        }
+      }, (error) => {
+        if (error.code === 'permission-denied') {
+          console.warn('Could not access user post stats (likely anonymous user):', error.message);
+          // Proceed without post stats for anonymous users
+        } else {
+          console.error('Error fetching post stats:', error);
         }
       });
       return unsubscribe;

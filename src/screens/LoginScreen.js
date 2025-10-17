@@ -1,5 +1,7 @@
 import { useContext, useState } from "react";
-import { Alert, Button, StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, Button, StyleSheet, Text, TextInput } from "react-native";
+import { ThemedView } from "../../components/themed-view";
+import { useThemeColor } from "../../hooks/use-theme-color";
 import { AuthContext } from "../context/AuthContext";
 import { signIn } from "../services/authService";
 
@@ -7,6 +9,12 @@ export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { setUser } = useContext(AuthContext);
+
+  // Theme colors
+  const backgroundColor = useThemeColor({}, 'background');
+  const textColor = useThemeColor({}, 'text');
+  const borderColor = useThemeColor({}, 'border');
+  const accentColor = useThemeColor({}, 'accent');
 
   const handleLogin = async () => {
     // Mock login for testing
@@ -46,34 +54,44 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
+  const dynamicStyles = createStyles(backgroundColor, textColor, borderColor, accentColor);
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Dare Social</Text>
+    <ThemedView style={{ flex: 1, justifyContent: "center", padding: 20 }}>
+      <Text style={dynamicStyles.title}>Dare Social</Text>
       <TextInput
         placeholder="Email (use test@test.com for mock login)"
-        style={styles.input}
+        placeholderTextColor={borderColor}
+        style={dynamicStyles.input}
         value={email}
         onChangeText={setEmail}
       />
       <TextInput
         placeholder="Password (use test123 for mock login)"
+        placeholderTextColor={borderColor}
         secureTextEntry
-        style={styles.input}
+        style={dynamicStyles.input}
         value={password}
         onChangeText={setPassword}
       />
       <Button title="Login" onPress={handleLogin} />
-      <Text onPress={() => navigation.navigate("Register")} style={styles.link}>
+      <Text onPress={() => navigation.navigate("Register")} style={dynamicStyles.link}>
         Create an account
       </Text>
-    </View>
-
+    </ThemedView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center", padding: 20 },
-  title: { fontSize: 24, textAlign: "center", marginBottom: 20 },
-  input: { borderWidth: 1, padding: 10, marginBottom: 10, borderRadius: 5 },
-  link: { textAlign: "center", marginTop: 10, color: "blue" }
+const createStyles = (backgroundColor, textColor, borderColor, accentColor) => StyleSheet.create({
+  title: { fontSize: 24, textAlign: "center", marginBottom: 20, color: textColor },
+  input: {
+    borderWidth: 1,
+    padding: 10,
+    marginBottom: 10,
+    borderRadius: 5,
+    borderColor,
+    backgroundColor: Array.isArray(backgroundColor) ? backgroundColor[0] : backgroundColor,
+    color: textColor
+  },
+  link: { textAlign: "center", marginTop: 10, color: accentColor }
 });

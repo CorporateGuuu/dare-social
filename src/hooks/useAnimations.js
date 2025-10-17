@@ -182,3 +182,27 @@ export const useSwipeGesture = (onSwipeLeft, onSwipeRight, threshold = 100) => {
 
   return { pan, panHandlers: panResponder.panHandlers };
 };
+
+export const useAnimations = () => {
+  const messageScale = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.spring(messageScale, {
+      toValue: 0.95,
+      tension: 300,
+      friction: 3,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(messageScale, {
+      toValue: 1,
+      tension: 300,
+      friction: 3,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  return { messageScale, handlePressIn, handlePressOut };
+};

@@ -22,7 +22,7 @@ export const AuthProvider = ({ children }) => {
         //   console.error('Error updating streak:', error);
         // }
 
-        // Listen to user document
+        // Listen to user document with error handling for anonymous users
         const userDocRef = doc(db, 'users', uid);
         const unsubscribeUser = onSnapshot(
           userDocRef,  

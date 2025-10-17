@@ -6,7 +6,9 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 // Screens
 import AchievementsScreen from '../screens/AchievementsScreen';
+import ActivityFeedScreen from '../screens/ActivityFeedScreen';
 import ChallengesScreen from '../screens/ChallengesScreen';
+import PlaceholderScreen from '../screens/PlaceholderScreen';
 import ChatListScreen from '../screens/ChatListScreen';
 import ChatScreen from '../screens/ChatScreen';
 import CompleteDareScreen from '../screens/CompleteDareScreen';
@@ -17,14 +19,20 @@ import Frame_Market from '../screens/FrameMarketScreen';
 import HomeFeedScreen from '../screens/HomeFeedScreen';
 import LeaderboardScreen from '../screens/LeaderboardScreen';
 import LoginScreen from '../screens/LoginScreen';
-import RegisterScreen from '../screens/RegisterScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
-import ReferralScreen from '../screens/ReferralScreen';
 import PostsScreen from '../screens/PostsScreen';
+import ProfileScreen from '../screens/ProfileScreen';
+import ReferralScreen from '../screens/ReferralScreen';
+import RegisterScreen from '../screens/RegisterScreen';
 import SearchScreen from '../screens/SearchScreen';
 import TrackerScreen from '../screens/TrackerScreen';
 import VoteScreen from '../screens/VoteScreen';
+import WalletScreen from '../screens/WalletScreen';
 import WinnerScreen from '../screens/WinnerScreen';
+import EditProfileScreen from '../screens/EditProfileScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
+import PrivacySecurityScreen from '../screens/PrivacySecurityScreen';
+import HelpSupportScreen from '../screens/HelpSupportScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -38,20 +46,17 @@ function MainTabs() {
           if (route.name === 'Home') {
             return <MaterialIcons name="home" size={size ?? 20} color={color ?? "#cccccc"} />;
           }
+          if (route.name === 'Posts') {
+            return <Icon name={focused ? 'create' : 'create-outline'} size={size ?? 20} color={color ?? "#cccccc"} />;
+          }
           if (route.name === 'Challenges') {
             return <MaterialIcons name="whatshot" size={size ?? 20} color={color ?? "#cccccc"} />;
           }
           if (route.name === 'Messages') {
             return <Icon name={focused ? 'chatbubbles' : 'chatbubbles-outline'} size={size ?? 20} color={color ?? "#cccccc"} />;
           }
-          if (route.name === 'Friends') {
-            return <Icon name="people-outline" size={size ?? 20} color={color ?? "#cccccc"} />;
-          }
-          if (route.name === 'group') {
-            return <Icon name="trophy-outline" size={size ?? 20} color={color ?? "#cccccc"} />;
-          }
-          if (route.name === 'Referrals') {
-            return <Icon name={focused ? 'share-social' : 'share-social-outline'} size={size ?? 20} color={color ?? "#cccccc"} />;
+          if (route.name === 'Profile') {
+            return <Icon name={focused ? 'person' : 'person-outline'} size={size ?? 20} color={color ?? "#cccccc"} />;
           }
           // Fallback icon for undefined routes
           return <MaterialIcons name="help" size={size ?? 20} color={color ?? "#cccccc"} />;
@@ -65,16 +70,10 @@ function MainTabs() {
       })}
     >
       <Tab.Screen name="Home" component={HomeFeedScreen} options={{ tabBarLabel: "Home" }} />
-      <Tab.Screen name="Posts" component={PostsScreen} options={{
-  tabBarIcon: ({ focused, color, size }) => (
-    <Icon name={focused ? 'create' : 'create-outline'} size={size} color={color} />
-  ),
-}} />
+      <Tab.Screen name="Posts" component={PostsScreen} options={{ tabBarLabel: "Posts" }} />
       <Tab.Screen name="Challenges" component={ChallengesScreen} options={{ tabBarLabel: "Challenges" }} />
       <Tab.Screen name="Messages" component={ChatListScreen} options={{ tabBarLabel: "Messages" }} />
-      <Tab.Screen name="Friends" component={SearchScreen} options={{ tabBarLabel: "Friends" }} />
-      <Tab.Screen name="group" component={LeaderboardScreen} options={{ tabBarLabel: "group" }} />
-      <Tab.Screen name="Referrals" component={ReferralScreen} />
+      <Tab.Screen name="Profile" component={ProfileScreen} options={{ tabBarLabel: "Profile" }} />
     </Tab.Navigator>
   );
 }
@@ -100,6 +99,14 @@ const RootNavigator = ({ user }) => {
       <Stack.Screen name="CreateChallengeForm" component={CreateChallengeFormScreen} />
       <Stack.Screen name="Tracker" component={TrackerScreen} />
       <Stack.Screen name="Posts" component={PostsScreen} />
+      <Stack.Screen name="Referrals" component={ReferralScreen} />
+      <Stack.Screen name="ActivityFeed" component={ActivityFeedScreen} />
+      <Stack.Screen name="Wallet" component={WalletScreen} />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+      <Stack.Screen name="Notifications" component={NotificationsScreen} />
+      <Stack.Screen name="Privacy" component={PrivacySecurityScreen} />
+      <Stack.Screen name="Help" component={HelpSupportScreen} />
+      <Stack.Screen name="MyDares" component={PlaceholderScreen} />
     </Stack.Navigator>
   );
 };

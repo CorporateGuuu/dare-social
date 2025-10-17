@@ -5,6 +5,7 @@ import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import * as ImagePicker from 'expo-image-picker';
 import { createPost as createPostService } from '../services/postService';
+import { VideoView } from 'expo-video';
 
 const PostsScreen = ({ navigation }) => {
   const { user } = useContext(AuthContext);
@@ -62,10 +63,41 @@ const PostsScreen = ({ navigation }) => {
     }
   };
 
+  const pickCamera = async () => {
+    const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+    if (permissionResult.granted === false) {
+      Alert.alert('Permission Required', 'Camera permission is required to take photos or videos.');
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      allowsEditing: true,
+      quality: 0.8,
+      videoMaxDuration: 30, // Limit video to 30 seconds for posts
+    });
+
+    if (!result.canceled) {
+      const asset = result.assets[0];
+      const type = asset.type === 'video' ? 'video' : 'image';
+      setNewPost(prev => ({ ...prev, media: asset, type }));
+    }
+  };
+
   const renderPost = ({ item }) => (
     <View style={styles.postCard}>
       <Text style={styles.postAuthor}>@{item.authorId}</Text>
-      {item.mediaUrls?.[0] && <Image source={{ uri: item.mediaUrls[0] }} style={styles.postImage} />}
+      {item.mediaUrls?.[0] && (
+        item.type === 'video' ? (
+          <VideoView
+            source={{ uri: item.mediaUrls[0] }}
+            style={styles.postVideo}
+            resizeMode="contain"
+          />
+        ) : (
+          <Image source={{ uri: item.mediaUrls[0] }} style={styles.postImage} />
+        )
+      )}
       <Text style={styles.postCaption}>{item.content}</Text>
       <View style={styles.postEngagement}>
         <Text>❤️ {item.engagement?.likes || 0}</Text>
@@ -91,6 +123,9 @@ const PostsScreen = ({ navigation }) => {
         />
         <TouchableOpacity style={styles.mediaButton} onPress={pickImage}>
           <Text style={styles.mediaButtonText}>📷</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.cameraButton} onPress={pickCamera}>
+          <Text style={styles.cameraButtonText}>📹</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.postButton} onPress={createPost}>
           <Text style={styles.postButtonText}>Post</Text>
@@ -130,12 +165,20 @@ const styles = StyleSheet.create({
     marginRight: 10,
     maxHeight: 100,
   },
-  mediaButton: { 
-    backgroundColor: '#00D4AA', 
-    borderRadius: 20, 
-    padding: 10, 
-    marginRight: 10 
+  mediaButton: {
+    backgroundColor: '#00D4AA',
+    borderRadius: 20,
+    padding: 10,
+    marginRight: 10
   },
+  mediaButtonText: { fontSize: 18 },
+  cameraButton: {
+    backgroundColor: '#00D4AA',
+    borderRadius: 20,
+    padding: 10,
+    marginRight: 10
+  },
+  cameraButtonText: { fontSize: 18 },
   postButton: { 
     backgroundColor: '#00D4AA', 
     paddingHorizontal: 20, 
@@ -149,11 +192,17 @@ const styles = StyleSheet.create({
     borderRadius: 12, 
     padding: 15 
   },
-  postImage: { 
-    width: '100%', 
-    height: 200, 
-    borderRadius: 8, 
-    marginVertical: 10 
+  postImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 8,
+    marginVertical: 10
+  },
+  postVideo: {
+    width: '100%',
+    height: 200,
+    borderRadius: 8,
+    marginVertical: 10
   },
   postCaption: { color: '#FFF', marginBottom: 10 },
   postEngagement: { 

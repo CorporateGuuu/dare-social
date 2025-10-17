@@ -41,8 +41,11 @@ if (__DEV__) {
     // Only connect once
     console.log('Connecting to Firebase functions emulator...');
     connectFunctionsEmulator(functions, "localhost", 5001);
+
+    console.log('Connecting to Firebase database emulator...');
+    connectDatabaseEmulator(database, "localhost", 9000);
   } catch (error) {
-    console.log('Functions emulator connection failed:', error.message);
+    console.log('Emulator connection failed:', error.message);
   }
 }
 
