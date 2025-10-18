@@ -89,11 +89,12 @@ export default function ActivityFeedScreen() {
   };
 
   const loadMore = () => {
-    if (loadingMore || feed.length >= initialDares.length + additionalDares.length) return;
+    if (loadingMore || page >= Math.ceil((initialDares.length + additionalDares.length) / 2)) return;
 
     setLoadingMore(true);
     setTimeout(() => {
-      const newDares = additionalDares.slice(0, 2);
+      const startIndex = page * 2;
+      const newDares = additionalDares.slice(startIndex, startIndex + 2);
       setFeed((prev) => [...prev, ...newDares]);
       setPage((prev) => prev + 1);
       setLoadingMore(false);

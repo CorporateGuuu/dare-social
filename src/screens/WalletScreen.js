@@ -2,7 +2,7 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import Animated from 'react-native-reanimated';
-import { AppContext } from '../../App';
+import { AppContext } from '../context/AppContext';
 import Icon from '@expo/vector-icons/Ionicons';
 
 const WalletScreen = ({ navigation }) => {

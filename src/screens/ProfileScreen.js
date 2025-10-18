@@ -6,9 +6,9 @@ import Icon from '@expo/vector-icons/Ionicons';
 import { Picker } from '@react-native-picker/picker';
 import { AuthContext } from '../context/AuthContext';
 import { getUserReferralData } from '../services/referralService';
-import { useThemeColor } from '../../hooks/use-theme-color';
-import { ThemedView } from '../../components/themed-view';
-import { ThemedText } from '../../components/themed-text';
+import { useThemeColor } from '../hooks/use-theme-color';
+import { ThemedView } from '../components/themed-view';
+import { ThemedText } from '../components/themed-text';
 import { useDares } from '../hooks/useDares';
 import { useUserActivities } from '../hooks/useUserActivities';
 import { getUserPosts } from '../services/postService';
@@ -16,6 +16,14 @@ import { getUserPosts } from '../services/postService';
 export default function ProfileScreen(props) {
   const { navigation, route } = props;
   const { user, logout, loading } = useContext(AuthContext);
+
+  // Theme colors
+  const backgroundColor = useThemeColor({}, 'background');
+  const cardColor = useThemeColor({}, 'card');
+  const textColor = useThemeColor({}, 'text');
+  const accentColor = useThemeColor({}, 'accent');
+
+  const dynamicStyles = getDynamicStyles(backgroundColor, cardColor, textColor, accentColor);
   const [referralData, setReferralData] = useState({});
   const [userPosts, setUserPosts] = useState([]);
   const [postsLoading, setPostsLoading] = useState(true);

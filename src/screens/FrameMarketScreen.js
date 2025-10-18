@@ -35,6 +35,14 @@ export default function Frame_Market() {
     { id: '4', user: '@brendengroess', image: 'https://randomuser.me/api/portraits/men/4.jpg' },
   ];
 
+  const frames = [
+    { id: 1, rarity: 2, name: 'Basic Frame', example: 'Basic text.', price: 100 },
+    { id: 2, rarity: 3, name: 'Epic Frame', example: 'This is a sample proof text.', price: 150 },
+    { id: 3, rarity: 4, name: 'Legendary Frame', example: 'Legendary content here.', price: 250 },
+    { id: 4, rarity: 1, name: 'Common Frame', example: 'Common frame text.', price: 50 },
+    { id: 5, rarity: 5, name: 'Mythic Frame', example: 'Mythic rarity frame.', price: 400 },
+  ];
+
   // Filter frames based on search query and filters
   const filteredFrames = frames.filter((frame) => {
     const matchesSearch = frame.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -83,14 +91,6 @@ export default function Frame_Market() {
   };
 
   const getDiamonds = (rarity) => Array.from({ length: rarity }, () => '♦').join(' ');
-
-  const frames = [
-    { id: 1, rarity: 2, name: 'Basic Frame', example: 'Basic text.', price: 100 },
-    { id: 2, rarity: 3, name: 'Epic Frame', example: 'This is a sample proof text.', price: 150 },
-    { id: 3, rarity: 4, name: 'Legendary Frame', example: 'Legendary content here.', price: 250 },
-    { id: 4, rarity: 1, name: 'Common Frame', example: 'Common frame text.', price: 50 },
-    { id: 5, rarity: 5, name: 'Mythic Frame', example: 'Mythic rarity frame.', price: 400 },
-  ];
 
   const renderSelectedFrame = () => {
     const diamonds = Array.from({ length: selectedFrame.rarity }, (_, i) => i);
@@ -324,16 +324,171 @@ export default function Frame_Market() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#1a1a1a" },
-  header: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', paddingVertical: 10 },
-  headerButton: { width: 131, height: 70, justifyContent: 'center', alignItems: 'center', borderRadius: 8 },
-  selected: { backgroundColor: '#333333' },
-  unselected: { backgroundColor: '#2a2a2a' },
-  headerText: { fontSize: 12, textAlign: 'center', marginTop: 4, color: '#ffffff' },
-  scrollContent: { flex: 1 },
-  contentContainer: { padding: 16 },
-  sectionTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 16, color: '#ffffff' },
-  selectedFrame: { alignItems: 'center' },
+  container: { flex: 1, backgroundColor: "#000000" },
+  content: { flex: 1 },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    alignItems: 'center',
+    paddingTop: 10,
+  },
+  logo: {
+    color: '#FFFFFF',
+    fontSize: 28,
+    fontWeight: 'bold',
+    textShadowColor: 'rgba(0, 212, 170, 0.5)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 8,
+  },
+  stonesBadge: {
+    backgroundColor: '#00D4AA',
+    borderRadius: 25,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#00D4AA',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  stonesText: { color: '#000000', fontSize: 14, fontWeight: 'bold' },
+  searchAndFilterContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 15,
+    marginVertical: 10,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    backgroundColor: '#1a1a1a',
+    borderRadius: 28,
+    paddingHorizontal: 18,
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: '#333333',
+    shadowColor: '#00D4AA',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  searchIcon: { fontSize: 18, color: '#777777', marginRight: 10 },
+  searchInput: {
+    flex: 1,
+    height: 45,
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '400',
+  },
+  filterButton: {
+    width: 45,
+    height: 45,
+    backgroundColor: '#1a1a1a',
+    borderRadius: 22.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#333333',
+    shadowColor: '#00D4AA',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  filterButtonActive: {
+    backgroundColor: '#00D4AA',
+    borderColor: '#00D4AA',
+    shadowColor: '#00D4AA',
+    shadowOpacity: 0.6,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  filterPanel: {
+    backgroundColor: '#1a1a1a',
+    marginHorizontal: 10,
+    marginBottom: 10,
+    borderRadius: 10,
+    padding: 15,
+    borderWidth: 1,
+    borderColor: '#333333'
+  },
+  filterTitle: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    textAlign: 'center'
+  },
+  filterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10
+  },
+  filterLabel: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    flex: 1
+  },
+  miniPicker: {
+    height: 40,
+    width: 120,
+    color: '#FFFFFF',
+    backgroundColor: '#333333',
+    borderRadius: 8
+  },
+  myFramesButton: {
+    backgroundColor: '#333333',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 10,
+    alignItems: 'center'
+  },
+  myFramesButtonActive: { backgroundColor: '#00D4AA' },
+  checkboxRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  myFramesText: { color: '#00D4AA', fontSize: 16, fontWeight: '600', marginLeft: 8 },
+  sectionContainer: { marginVertical: 5 },
+  stories: {
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    backgroundColor: '#111111'
+  },
+  story: { alignItems: 'center', marginRight: 15 },
+  storyImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderWidth: 3,
+    borderColor: '#00D4AA'
+  },
+  storyUser: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    marginTop: 5,
+    textAlign: 'center'
+  },
+  tabsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingVertical: 10,
+    backgroundColor: '#111111'
+  },
+  tabButton: {
+    alignItems: 'center',
+    padding: 10,
+    borderRadius: 10,
+    backgroundColor: '#222222'
+  },
+  tabActive: { backgroundColor: '#00D4AA' },
+  tabText: { color: '#FFFFFF', fontSize: 12, marginTop: 5 },
+  framesScroll: { flex: 1, paddingHorizontal: 15 },
+  selectedFrame: { alignItems: 'center', padding: 20 },
   rarity: { flexDirection: 'row', marginBottom: 8 },
   diamond: { fontSize: 20, color: 'gold', marginHorizontal: 2 },
   frameName: { fontSize: 18, fontWeight: 'bold', marginBottom: 16, color: '#ffffff' },
@@ -341,19 +496,14 @@ const styles = StyleSheet.create({
   exampleText: { fontSize: 16, textAlign: 'center', color: '#cccccc' },
   purchaseButton: { backgroundColor: '#667eea', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 },
   purchaseText: { color: '#ffffff', fontSize: 16, fontWeight: 'bold' },
-  galleryTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 16, marginTop: 20, color: '#ffffff' },
-  galleryBox: { borderWidth: 2, borderColor: '#555555', padding: 10, backgroundColor: '#2a2a2a' },
-  galleryHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  balanceText: { fontSize: 16, fontWeight: 'bold', color: '#ffffff' },
-  filterIcons: { flexDirection: 'row', gap: 10 },
+  iconRow: { flexDirection: 'row', justifyContent: 'space-around', width: 200, marginTop: 16 },
   card: { backgroundColor: '#2a2a2a', borderWidth: 1, borderColor: '#555555', marginVertical: 8, padding: 16, borderRadius: 8 },
   cardRarity: { flexDirection: 'row', justifyContent: 'center', marginBottom: 8 },
   cardDiamond: { fontSize: 16, color: 'gold', marginHorizontal: 2 },
   cardName: { fontSize: 16, fontWeight: 'bold', textAlign: 'center', marginBottom: 8, color: '#ffffff' },
   cardPrice: { fontSize: 14, textAlign: 'center', color: '#cccccc' },
   finalizedText: { fontSize: 16, textAlign: 'center', color: '#667eea' },
-  iconRow: { flexDirection: 'row', justifyContent: 'space-around', width: 200, marginTop: 16 },
-  sectionContainer: { marginBottom: 16 },
+  sectionTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 16, color: '#ffffff' },
   stoneRow: { flexDirection: 'row', justifyContent: 'space-between', height: 80, marginBottom: 8 },
   stoneSlot: { width: '30%', marginHorizontal: 4, height: '100%', borderWidth: 1, borderColor: '#555555', alignItems: 'center', justifyContent: 'center', borderRadius: 8, backgroundColor: '#2a2a2a' },
   stoneFrame: { alignItems: 'center' },
@@ -362,4 +512,12 @@ const styles = StyleSheet.create({
   smallDiamond: { fontSize: 10, color: 'gold', marginHorizontal: 1 },
   blankSlot: { alignItems: 'center', justifyContent: 'center' },
   blankText: { fontSize: 12, color: '#888888' },
+  frameTitle: { fontSize: 16, fontWeight: 'bold', textAlign: 'center', marginBottom: 8, color: '#ffffff' },
+  rarityRow: { flexDirection: 'row', justifyContent: 'center', marginBottom: 8 },
+  framePreview: { borderWidth: 1, borderColor: '#555555', padding: 10, marginBottom: 8, backgroundColor: '#333333' },
+  previewText: { fontSize: 14, textAlign: 'center', color: '#cccccc' },
+  priceRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  priceText: { fontSize: 14, color: '#cccccc' },
+  actionButton: { backgroundColor: '#00D4AA', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6 },
+  actionText: { color: '#000000', fontSize: 12, fontWeight: 'bold' },
 });
