@@ -39,18 +39,12 @@ import HelpSupportScreen from '../screens/HelpSupportScreen';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Create header component with search and frames buttons
+// Create header component
 function HeaderRight() {
   const navigation = useNavigation();
 
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingRight: 10 }}>
-      <TouchableOpacity onPress={() => navigation.navigate('Search')}>
-        <Icon name="search" size={24} color="#ffffff" />
-      </TouchableOpacity>
-      <TouchableOpacity onPress={() => navigation.navigate('Frame_Market')}>
-        <MaterialIcons name="filter-frames" size={24} color="#ffffff" />
-      </TouchableOpacity>
     </View>
   );
 }
@@ -100,7 +94,7 @@ const RootNavigator = ({ user }) => {
   return (
     <Stack.Navigator initialRouteName={user ? "Main" : "Onboarding"}>
       <Stack.Screen name="Onboarding" component={OnboardingScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="Main" component={MainTabs} options={{ headerShown: false }} />
+      <Stack.Screen name="Main" component={MainTabs} options={{ headerShown: true, headerRight: HeaderRight, headerStyle: { backgroundColor: '#000000' }, headerTintColor: '#ffffff', headerTitle: '' }} />
       <Stack.Screen name="Search" component={SearchScreen} options={{ headerShown: true, headerRight: HeaderRight }} />
       <Stack.Screen name="DareDetails" component={DareDetailsScreen} options={{ headerShown: true, headerRight: HeaderRight, headerStyle: { backgroundColor: '#000000' }, headerTintColor: '#ffffff' }} />
       <Stack.Screen name="CompleteDare" component={CompleteDareScreen} options={{ headerShown: true, headerRight: HeaderRight, headerStyle: { backgroundColor: '#000000' }, headerTintColor: '#ffffff' }} />

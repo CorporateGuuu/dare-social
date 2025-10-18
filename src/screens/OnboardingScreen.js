@@ -15,7 +15,7 @@ export default function OnboardingScreen({ navigation }) {
         Create fun dares, earn Stone 🪨, and climb the leaderboard.
       </Text>
 
-      <TouchableOpacity style={styles.btn} onPress={() => navigation.navigate("LoginScreen")}>
+      <TouchableOpacity style={styles.btn} onPress={() => navigation.replace("LoginScreen")}>
         <Text style={styles.btnText}>Continue</Text>
       </TouchableOpacity>
 

@@ -1,400 +1,385 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import {
-  FlatList,
-  RefreshControl,
-  ActivityIndicator,
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  Image
-} from 'react-native';
-import { collection, query, orderBy, where, getDocs, limit, doc, setDoc, deleteDoc } from 'firebase/firestore';
-import { db, auth } from '../config/firebase';
-import { useFollowing } from '../hooks/useFollowing';
-import CommentsModal from '../components/CommentsModal';
-import PlaceholderCard from '../components/PlaceholderCard';
-import { useThemeColor } from '../../hooks/use-theme-color';
-import { ThemedView } from '../../components/themed-view';
-import { ThemedText } from '../../components/themed-text';
-import { listCompletedDares } from '../lib/firebase';
+import React, { useState, useEffect } from 'react';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, ScrollView, RefreshControl, ActivityIndicator, TextInput } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
+import { Picker } from '@react-native-picker/picker';
+import Icon from '@expo/vector-icons/Ionicons';
+import { useNavigation } from '@react-navigation/native';
 
-// Page size for infinite scroll
-const PAGE_SIZE = 20;
+const initialDares = [
+  { id: '1', title: 'The Kings will be better than the Bulls this season', user1: '@willsamrick', user2: '@frankvecchie', icons: ['○ 25', '✖', '...', '○ 25'], status: 'Pending', borderColor: '#FF0000' },
+  { id: '2', title: 'The Kings will be better than the Bulls this season', user1: '@willsamrick', user2: '@frankvecchie', icons: ['○ 25', '✖', '...', '○ 25'], status: 'Pending', borderColor: '#FF0000' },
+  { id: '3', title: 'I will run a marathon', user1: '@willsamrick', user2: '@frankvecchie', icons: ['▶', '✖', '...', '○ 25'], status: 'Pending', borderColor: '#FF0000' },
+  { id: '4', title: 'The Kings will be better than the Bulls this season', user1: '@willsamrick', user2: '@mattbraun', icons: ['▶', '...', '✖', '▶'], result: 'Won', action: 'Post', borderColor: '#00D4AA' },
+  { id: '5', title: 'Bitcoin will not reach $110,000', user1: '@willsamrick', user2: '@brendengroess', icons: ['▶', '...', '✖', '▶'], result: 'Lost', action: 'Add Proof', borderColor: '#FF6666' },
+  { id: '6', title: 'Bitcoin will not reach $110,000', user1: '@willsamrick', user2: '@brendengroess', icons: ['▶', '...', '✖', '▶'], result: 'Lost', action: 'Add Proof', borderColor: '#FF6666' },
+];
 
-export default function ActivityFeedScreen({ navigation }) {
-  const backgroundColor = useThemeColor({}, 'background');
-  const cardColor = useThemeColor({}, 'card');
-  const textColor = useThemeColor({}, 'text');
-  const accentColor = useThemeColor({}, 'accent');
-  const borderColor = useThemeColor({}, 'border');
-  const iconColor = useThemeColor({}, 'icon');
+// Simulated additional dares for infinite scroll
+const additionalDares = [
+  { id: '7', title: 'I will finish a coding project', user1: '@willsamrick', user2: '@johndoe', icons: ['○ 50', '✖', '...', '○ 50'], status: 'Pending', borderColor: '#FF0000' },
+  { id: '8', title: 'Rain will fall tomorrow', user1: '@willsamrick', user2: '@janedoe', icons: ['▶', '...', '✖', '▶'], result: 'Won', action: 'Post', borderColor: '#00D4AA' },
+  { id: '9', title: 'Stock market will rise', user1: '@willsamrick', user2: '@bobsmith', icons: ['▶', '...', '✖', '▶'], result: 'Lost', action: 'Add Proof', borderColor: '#FF6666' },
+];
 
-  const [activities, setActivities] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const [commentsModalVisible, setCommentsModalVisible] = useState(false);
-  const [selectedActivityId, setSelectedActivityId] = useState(null);
+const stories = [
+  { id: '1', user: '@willsamrick', image: 'https://randomuser.me/api/portraits/men/1.jpg' },
+  { id: '2', user: '@frankvecchie', image: 'https://randomuser.me/api/portraits/men/2.jpg' },
+  { id: '3', user: '@mattbraun', image: 'https://randomuser.me/api/portraits/men/3.jpg' },
+  { id: '4', user: '@brendengroess', image: 'https://randomuser.me/api/portraits/men/4.jpg' },
+];
 
-  const currentUserId = auth.currentUser?.uid;
-  const dummyUserId = 'dummy'; // For useFollowing hook, we don't need it here but need the following count
-
-  useFollowing(currentUserId, dummyUserId);
-
-  // Get following list for the current user
-  const fetchFollowingList = useCallback(async () => {
-    if (!currentUserId) return [];
-    try {
-      const followingRef = collection(db, 'users', currentUserId, 'following');
-      const followingSnap = await getDocs(followingRef);
-      const following = followingSnap.docs.map(doc => doc.id);
-      return following;
-    } catch (error) {
-      console.error('Error fetching following list:', error);
-      return [];
-    }
-  }, [currentUserId]);
-
-  // Fetch activities with filtering
-  const fetchActivities = useCallback(async (loadMore = false) => {
-    if (!hasMore && loadMore) return;
-
-    const loadingState = loadMore ? setLoadingMore : setLoading;
-    const refreshingState = loadMore ? null : setRefreshing;
-
-    loadingState(true);
-    if (refreshingState) refreshingState(true);
-
-    try {
-      // Fetch both post activities and completed dares
-      const [postActivities, completedDares] = await Promise.all([
-        fetchPostActivities(loadMore),
-        fetchCompletedDares()
-      ]);
-
-      // Convert completed dares to activity format
-      const dareActivities = completedDares.map(dare => ({
-        id: `dare-${dare.id}`,
-        type: 'dare',
-        actorId: dare.winner?.uid || currentUserId,
-        ...dare,
-        likes: 0, // Dares don't have likes/comments in the same way
-        comments: 0,
-        liked: false,
-        createdAt: new Date(), // Use completion time
-      }));
-
-      // Combine and sort by created time (most recent first)
-      const allActivities = [...postActivities, ...dareActivities].sort((a, b) => {
-        const aTime = a.createdAt?.toDate?.() || new Date(a.createdAt || 0);
-        const bTime = b.createdAt?.toDate?.() || new Date(b.createdAt || 0);
-        return bTime - aTime;
-      });
-
-      if (loadMore) {
-        setActivities(prev => [...prev, ...allActivities]);
-      } else {
-        setActivities(allActivities);
-      }
-
-      // For now, assume we got all available data
-      setHasMore(allActivities.length >= PAGE_SIZE);
-
-    } catch (error) {
-      console.error('Error fetching activities:', error);
-    } finally {
-      loadingState(false);
-      if (refreshingState) refreshingState(false);
-    }
-  }, [currentUserId, hasMore, fetchPostActivities, fetchCompletedDares]);
-
-  // Fetch post activities from Firebase
-  const fetchPostActivities = useCallback(async (loadMore = false) => {
-    const following = await fetchFollowingList();
-    const publicUids = [...following, currentUserId];
-
-    // Split into smaller chunks if following list is too large (Firestore 'in' limit is 10)
-    const uidChunks = [];
-    for (let i = 0; i < publicUids.length; i += 10) {
-      uidChunks.push(publicUids.slice(i, i + 10));
-    }
-
-    const allActivities = [];
-    for (const uidChunk of uidChunks) {
-      const q = query(
-        collection(db, 'activities'),
-        where('actorId', 'in', uidChunk),
-        orderBy('createdAt', 'desc'),
-        limit(10) // Fetch fewer per chunk
-      );
-
-      const querySnapshot = await getDocs(q);
-      for (const docSnap of querySnapshot.docs) {
-        const data = docSnap.data();
-
-        // Fetch likes and comments counts
-        const [likesSnap, commentsSnap] = await Promise.all([
-          getDocs(collection(docSnap.ref, 'likes')),
-          getDocs(collection(docSnap.ref, 'comments'))
-        ]);
-
-        const likesCount = likesSnap.size;
-        const commentsCount = commentsSnap.size;
-        const likedByUser = likesSnap.docs.some(likeDoc => likeDoc.id === currentUserId);
-
-        allActivities.push({
-          id: docSnap.id,
-          ...data,
-          likes: likesCount,
-          comments: commentsCount,
-          liked: likedByUser,
-        });
-      }
-    }
-
-    return allActivities;
-  }, [currentUserId, fetchFollowingList]);
-
-  // Fetch completed dares
-  const fetchCompletedDares = useCallback(async () => {
-    try {
-      const result = await listCompletedDares();
-      return result.data || [];
-    } catch (error) {
-      console.error('Error fetching completed dares:', error);
-      return [];
-    }
-  }, []);
-
-  // Initial load
-  useEffect(() => {
-    fetchActivities();
-  }, [fetchActivities]);
-
-  // Handle pull-to-refresh
-  const handleRefresh = useCallback(() => {
-    setHasMore(true);
-    fetchActivities();
-  }, [fetchActivities]);
-
-  // Handle infinite scroll
-  const handleLoadMore = useCallback(() => {
-    if (!loading && hasMore && !loadingMore) {
-      fetchActivities(true);
-    }
-  }, [loading, hasMore, loadingMore, fetchActivities]);
-
-  // Handle like
-  const handleLike = async (activityId, currentlyLiked) => {
-    try {
-      const uid = auth.currentUser.uid;
-      const ref = doc(db, "activities", activityId, "likes", uid);
-      if (currentlyLiked) {
-        await deleteDoc(ref);
-        setActivities(prev => prev.map(act =>
-          act.id === activityId
-            ? { ...act, liked: false, likes: act.likes - 1 }
-            : act
-        ));
-      } else {
-        await setDoc(ref, { createdAt: new Date() });
-        setActivities(prev => prev.map(act =>
-          act.id === activityId
-            ? { ...act, liked: true, likes: act.likes + 1 }
-            : act
-        ));
-      }
-    } catch (error) {
-      console.error('Error toggling like:', error);
-    }
-  };
-
-  // Handle comment
-  const handleComment = (activityId) => {
-    setSelectedActivityId(activityId);
-    setCommentsModalVisible(true);
-  };
-
-  // Render activity item
-  const renderActivityItem = ({ item }) => {
-    const dynamicStyles = getDynamicStyles(cardColor, textColor, accentColor, borderColor, iconColor, textColor);
-
-    // Similar rendering logic to HomeFeedScreen, adapted for the new structure
-    if (item.type === 'dare') {
-      return (
-        <ThemedView style={dynamicStyles.postContainer}>
-          <View style={dynamicStyles.headerRow}>
-            {item.winner && (
-              <TouchableOpacity onPress={() => navigation.navigate('Profile', { user: item.winner })}>
-                <ThemedText style={dynamicStyles.postUsername}>{item.winner.username}</ThemedText>
-              </TouchableOpacity>
-            )}
-            <ThemedText style={dynamicStyles.postHeader}> beat </ThemedText>
-            {item.losers && item.losers.length > 0 && (
-              <TouchableOpacity onPress={() => navigation.navigate('Profile', { user: item.losers[0] })}>
-                <ThemedText style={dynamicStyles.postUsername}>{item.losers[0].username}</ThemedText>
-              </TouchableOpacity>
-            )}
-          </View>
-          {item.winnerProof && (
-            <View style={dynamicStyles.mediaContainer}>
-              <Image source={{ uri: item.winnerProof.mediaUrl }} style={dynamicStyles.mediaImage} />
-              {item.winnerProof.caption && <ThemedText style={dynamicStyles.caption}>{item.winnerProof.caption}</ThemedText>}
-            </View>
-          )}
-          <TouchableOpacity onPress={() => navigation.navigate('DareDetails', { dare: item })}>
-            <PlaceholderCard title={item.title} subtitle={`+${item.rewardStone} Stone 🪨`} />
-          </TouchableOpacity>
-          <ThemedView style={dynamicStyles.socialBar}>
-            <TouchableOpacity style={dynamicStyles.socialItem} onPress={() => handleComment(item.id)}>
-              <ThemedText style={dynamicStyles.icon}>💬</ThemedText>
-              <ThemedText style={dynamicStyles.count}>{item.comments}</ThemedText>
-            </TouchableOpacity>
-            <TouchableOpacity style={dynamicStyles.socialItem} onPress={() => handleLike(item.id, item.liked)}>
-              <ThemedText style={dynamicStyles.icon}>{item.liked ? '❤️' : '🤍'}</ThemedText>
-              <ThemedText style={dynamicStyles.count}>{item.likes}</ThemedText>
-            </TouchableOpacity>
-          </ThemedView>
-        </ThemedView>
-      );
-    }
-
-    if (item.type === 'post') {
-      return (
-        <TouchableOpacity onPress={() => navigation.navigate("PostDetails", { activityId: item.id })}>
-          <ThemedView style={dynamicStyles.postContainer}>
-            <View style={dynamicStyles.headerRow}>
-              <TouchableOpacity onPress={() => navigation.navigate('Profile', { user: { id: item.actorId, username: item.actorId } })}>
-                <ThemedText style={dynamicStyles.postUsername}>@{item.actorId}</ThemedText>
-              </TouchableOpacity>
-            </View>
-            {item.text && <ThemedText style={dynamicStyles.postText}>{item.text}</ThemedText>}
-            {item.mediaUrl && (
-              <View style={dynamicStyles.mediaContainer}>
-                <Image source={{ uri: item.mediaUrl }} style={dynamicStyles.mediaImage} />
-              </View>
-            )}
-            {item.hashtags && item.hashtags.length > 0 && (
-              <ThemedText style={dynamicStyles.hashtags}>{item.hashtags.map(tag => '#'+tag).join(' ')}</ThemedText>
-            )}
-            <ThemedView style={dynamicStyles.socialBar}>
-              <TouchableOpacity style={dynamicStyles.socialItem} onPress={() => handleComment(item.id)}>
-                <ThemedText style={dynamicStyles.icon}>💬</ThemedText>
-                <ThemedText style={dynamicStyles.count}>{item.comments}</ThemedText>
-              </TouchableOpacity>
-              <TouchableOpacity style={dynamicStyles.socialItem} onPress={() => handleLike(item.id, item.liked)}>
-                <ThemedText style={dynamicStyles.icon}>{item.liked ? '❤️' : '🤍'}</ThemedText>
-                <ThemedText style={dynamicStyles.count}>{item.likes}</ThemedText>
-              </TouchableOpacity>
-            </ThemedView>
-          </ThemedView>
+const DareCard = ({ dare }) => (
+  <View style={[styles.dareCard, { borderColor: dare.borderColor }]}>
+    <Text style={styles.dareTitle}>{dare.title}</Text>
+    <View style={styles.userRow}>
+      <Text style={styles.username}>{dare.user1}</Text>
+      <Image source={{ uri: 'https://randomuser.me/api/portraits/men/1.jpg' }} style={styles.avatar} />
+      <Image source={{ uri: 'https://randomuser.me/api/portraits/men/2.jpg' }} style={styles.avatar} />
+      <Text style={styles.username}>{dare.user2}</Text>
+    </View>
+    <View style={styles.iconsRow}>
+      {dare.icons.map((icon, index) => (
+        <Text key={index} style={styles.icon}>{icon}</Text>
+      ))}
+    </View>
+    {dare.status ? (
+      <Text style={[styles.status, { color: dare.borderColor }]}>{dare.status}</Text>
+    ) : (
+      <>
+        <Text style={[styles.result, { color: dare.borderColor === '#00D4AA' ? '#00D4AA' : '#FF6666' }]}>{dare.result}</Text>
+        <TouchableOpacity style={styles.actionButton}>
+          <Text style={styles.actionText}>{dare.action}</Text>
         </TouchableOpacity>
-      );
-    }
+      </>
+    )}
+  </View>
+);
 
-    return null;
+const Story = ({ story }) => (
+  <View style={styles.story}>
+    <Image source={{ uri: story.image }} style={styles.storyImage} />
+    <Text style={styles.storyUser}>{story.user}</Text>
+  </View>
+);
+
+export default function ActivityFeedScreen() {
+  const navigation = useNavigation();
+  const [feed, setFeed] = useState(initialDares);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    status: 'All',
+    result: 'All',
+    myDares: false,
+  });
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    setTimeout(() => {
+      setFeed([...initialDares]);
+      setRefreshing(false);
+      setPage(1);
+      setSearchQuery('');
+      setFilters({ status: 'All', result: 'All', myDares: false });
+    }, 2000);
   };
 
-  if (loading && activities.length === 0) {
-    return <ActivityIndicator style={{ flex: 1 }} />;
-  }
+  const loadMore = () => {
+    if (loadingMore || feed.length >= initialDares.length + additionalDares.length) return;
 
-  const containerStyles = getDynamicStyles(backgroundColor, cardColor, textColor, accentColor, borderColor, iconColor);
+    setLoadingMore(true);
+    setTimeout(() => {
+      const newDares = additionalDares.slice(0, 2);
+      setFeed((prev) => [...prev, ...newDares]);
+      setPage((prev) => prev + 1);
+      setLoadingMore(false);
+    }, 1500);
+  };
+
+  // Filter feed based on search query and advanced filters
+  const filteredFeed = feed.filter((dare) => {
+    const matchesSearch = dare.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = filters.status === 'All' || dare.status === filters.status;
+    const matchesResult = filters.result === 'All' || dare.result === filters.result;
+    const matchesMyDares = !filters.myDares || dare.user1 === '@willsamrick'; // Example: Filter for user's dares
+    return matchesSearch && matchesStatus && matchesResult && matchesMyDares;
+  });
 
   return (
-    <ThemedView style={containerStyles.container}>
-      <FlatList
-        data={activities}
-        keyExtractor={(item) => item.id}
-        renderItem={renderActivityItem}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-        }
-        onEndReached={handleLoadMore}
-        onEndReachedThreshold={0.5}
-        ListFooterComponent={loadingMore ? <ActivityIndicator /> : null}
-        contentContainerStyle={containerStyles.listContent}
-      />
-      <CommentsModal
-        isVisible={commentsModalVisible}
-        onClose={() => setCommentsModalVisible(false)}
-        activityId={selectedActivityId}
-      />
-    </ThemedView>
+    <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
+      <StatusBar backgroundColor="#000000" style="light" />
+      <View style={styles.content}>
+        <View style={styles.header}>
+          <Text style={styles.logo}>Abstrac</Text>
+          <View style={styles.stonesBadge}>
+            <Text style={styles.stonesText}>○ 10</Text>
+          </View>
+        </View>
+
+        <View style={styles.searchAndFilterContainer}>
+          <View style={styles.searchBar}>
+            <Text style={styles.searchIcon}>🔍</Text>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search dares..."
+              placeholderTextColor="#AAAAAA"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              autoCapitalize="none"
+            />
+          </View>
+          <TouchableOpacity
+            style={[styles.filterButton, showFilters && styles.filterButtonActive]}
+            onPress={() => setShowFilters(!showFilters)}
+          >
+            <Icon name="funnel" size={18} color={showFilters ? "#000000" : "#FFFFFF"} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.filterButton}
+            onPress={() => navigation.navigate('Notifications')}
+          >
+            <Icon name="notifications" size={18} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
+
+        {showFilters && (
+          <View style={styles.filterPanel}>
+            <Text style={styles.filterTitle}>Filter Options</Text>
+            <View style={styles.filterRow}>
+              <Text style={styles.filterLabel}>Status:</Text>
+              <Picker
+                selectedValue={filters.status}
+                style={styles.miniPicker}
+                onValueChange={(itemValue) => setFilters({ ...filters, status: itemValue })}
+              >
+                <Picker.Item label="All" value="All" />
+                <Picker.Item label="Pending" value="Pending" />
+              </Picker>
+            </View>
+            <View style={styles.filterRow}>
+              <Text style={styles.filterLabel}>Result:</Text>
+              <Picker
+                selectedValue={filters.result}
+                style={styles.miniPicker}
+                onValueChange={(itemValue) => setFilters({ ...filters, result: itemValue })}
+              >
+                <Picker.Item label="All" value="All" />
+                <Picker.Item label="Won" value="Won" />
+                <Picker.Item label="Lost" value="Lost" />
+              </Picker>
+            </View>
+            <TouchableOpacity
+              style={[styles.myDaresButton, filters.myDares && styles.myDaresButtonActive]}
+              onPress={() => setFilters({ ...filters, myDares: !filters.myDares })}
+            >
+              <View style={styles.checkboxRow}>
+                <Icon name={filters.myDares ? "checkmark-circle" : "ellipse-outline"} size={20} color="#FFFFFF" />
+                <Text style={styles.myDaresText}>My Dares</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        <View style={styles.sectionContainer}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.stories}>
+            {stories.map((story) => (
+              <Story key={story.id} story={story} />
+            ))}
+          </ScrollView>
+        </View>
+        <FlatList
+          data={filteredFeed}
+          renderItem={({ item }) => <DareCard dare={item} />}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.feed}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={['#00D4AA']}
+              tintColor="#00D4AA"
+              title="Refreshing..."
+              titleColor="#00D4AA"
+            />
+          }
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={() => loadingMore && <ActivityIndicator size="large" color="#00D4AA" />}
+        />
+      </View>
+    </SafeAreaView>
   );
 }
 
-const getDynamicStyles = (backgroundColor, cardColor, textColor, accentColor, borderColor, iconColor) => StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  listContent: {
-    padding: 16,
-  },
-  postContainer: {
-    marginBottom: 16,
-    backgroundColor: cardColor,
-    borderRadius: 8,
-    padding: 16,
-  },
-  headerRow: {
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#000000' },
+  content: { flex: 1 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 15, paddingVertical: 8, alignItems: 'center' },
+  logo: { color: '#FFFFFF', fontSize: 24, fontWeight: 'bold' },
+  stonesBadge: { backgroundColor: '#222222', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 5 },
+  stonesText: { color: '#00D4AA', fontSize: 16 },
+
+  // Search and Filter Section
+  searchAndFilterContainer: {
     flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 10,
+    marginVertical: 2
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    backgroundColor: '#222222',
+    borderRadius: 25,
+    paddingHorizontal: 15,
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: '#333333'
+  },
+  searchIcon: { fontSize: 16, color: '#AAAAAA', marginRight: 10 },
+  searchInput: {
+    flex: 1,
+    height: 40,
+    color: '#FFFFFF',
+    fontSize: 16
+  },
+  filterButton: {
+    width: 40,
+    height: 40,
+    backgroundColor: '#222222',
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8
+    borderWidth: 1,
+    borderColor: '#333333'
   },
-  postUsername: {
-    fontSize: 16,
+  filterButtonActive: { backgroundColor: '#00D4AA' },
+  filterText: { fontSize: 18 },
+
+  // Filter Panel
+  filterPanel: {
+    backgroundColor: '#1a1a1a',
+    marginHorizontal: 10,
+    marginBottom: 10,
+    borderRadius: 10,
+    padding: 15,
+    borderWidth: 1,
+    borderColor: '#333333'
+  },
+  filterTitle: {
+    color: '#FFFFFF',
+    fontSize: 18,
     fontWeight: 'bold',
-    color: accentColor,
-    textDecorationLine: 'underline'
-  },
-  postHeader: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  mediaContainer: {
-    marginBottom: 8,
-    alignSelf: 'center'
-  },
-  mediaImage: {
-    width: 231,
-    height: 350,
-    borderRadius: 8
-  },
-  caption: {
-    fontSize: 14,
-    marginTop: 4,
+    marginBottom: 15,
     textAlign: 'center'
   },
-  postText: {
-    fontSize: 16,
-    marginBottom: 8
-  },
-  hashtags: {
-    color: accentColor,
-    fontSize: 14,
-    marginBottom: 8
-  },
-  socialBar: {
+  filterRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
     alignItems: 'center',
-    paddingVertical: 8,
-    borderTopWidth: 1,
-    borderColor: borderColor
+    justifyContent: 'space-between',
+    marginBottom: 10
   },
-  socialItem: {
-    alignItems: 'center',
+  filterLabel: {
+    color: '#FFFFFF',
+    fontSize: 16,
     flex: 1
   },
-  icon: {
-    fontSize: 22,
-    padding: 11,
+  miniPicker: {
+    height: 40,
+    width: 120,
+    color: '#FFFFFF',
+    backgroundColor: '#333333',
+    borderRadius: 8
   },
-  count: {
-    fontSize: 14,
-    color: iconColor
+  myDaresButton: {
+    backgroundColor: '#333333',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 10,
+    alignItems: 'center'
   },
+  myDaresButtonActive: { backgroundColor: '#00D4AA' },
+  checkboxRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  myDaresText: { color: '#00D4AA', fontSize: 16, fontWeight: '600', marginLeft: 8 },
+
+  // Stories Section
+  sectionContainer: { marginVertical: 5 },
+  sectionTitle: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '600',
+    marginHorizontal: 15,
+    marginBottom: 10
+  },
+  stories: {
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    backgroundColor: '#111111'
+  },
+  story: { alignItems: 'center', marginRight: 15 },
+  storyImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderWidth: 3,
+    borderColor: '#00D4AA'
+  },
+  storyUser: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    marginTop: 5,
+    textAlign: 'center'
+  },
+
+  // Feed
+  feed: { padding: 10 },
+  dareCard: {
+    backgroundColor: '#222222',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'transparent',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3
+  },
+  dareTitle: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold', marginBottom: 8 },
+  userRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginVertical: 10
+  },
+  username: { color: '#AAAAAA', fontSize: 14 },
+  avatar: { width: 35, height: 35, borderRadius: 17.5 },
+  iconsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginVertical: 10
+  },
+  icon: { color: '#FFFFFF', fontSize: 18 },
+  status: { color: '#FF6666', fontSize: 14, textAlign: 'center', marginTop: 10 },
+  result: { fontSize: 16, fontWeight: 'bold', textAlign: 'center', marginTop: 10 },
+  actionButton: {
+    backgroundColor: '#00D4AA',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 10,
+    alignSelf: 'center',
+    minWidth: 100
+  },
+  actionText: { color: '#000000', textAlign: 'center', fontWeight: 'bold', fontSize: 14 },
 });
+
+// Legacy styles (keeping for backward compatibility)
+const legacyStyles = {
+  picker: { height: 50, width: '100%', color: '#FFFFFF', backgroundColor: '#333333', borderRadius: 5 },
+};

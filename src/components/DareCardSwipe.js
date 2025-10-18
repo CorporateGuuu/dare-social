@@ -10,6 +10,8 @@ const Particle = ({ x, y, color, opacity }) => (
   <Animated.View
     style={{
       position: 'absolute',
+      left: x,
+      top: y,
       width: 5,
       height: 5,
       backgroundColor: color,
