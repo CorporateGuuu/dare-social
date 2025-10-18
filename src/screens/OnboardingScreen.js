@@ -10,7 +10,7 @@ export default function OnboardingScreen({ navigation }) {
   return (
     <ThemedView style={styles.container}>
       <View style={[styles.hero, { backgroundColor: cardColor }]} />
-      <Text style={[styles.title, { color: textColor }]}>Welcome to Dare Social</Text>
+      <Text style={[styles.title, { color: textColor }]}>Welcome to Abstrac</Text>
       <Text style={[styles.subtitle, { color: textColor }]}>
         Create fun dares, earn Stone 🪨, and climb the leaderboard.
       </Text>
