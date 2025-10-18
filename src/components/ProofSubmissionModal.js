@@ -23,10 +23,6 @@ const ProofSubmissionModal = ({ isVisible, onClose, dare }) => {
     try {
       const dareRef = doc(db, "dares", dare.dare_id);
 
-      // Create proof data - simplified without unused variables
-      const proofTextTrimmed = proofText.trim();
-      const proofUrlTrimmed = proofUrl.trim();
-
       // Update participant completion status
       const updatedParticipants = dare.participants.map(p => {
         if (p.user_id === currentUserId) {
@@ -76,7 +72,7 @@ const ProofSubmissionModal = ({ isVisible, onClose, dare }) => {
         </h2>
 
         <p className="text-gray-400 text-sm mb-4 text-center">
-          Prove that you've completed: <br />
+          Prove that you&apos;ve completed: <br />
           <span className="text-white font-medium">{dare.title}</span>
         </p>
 

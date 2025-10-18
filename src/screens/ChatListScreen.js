@@ -1,6 +1,6 @@
 // screens/ChatListScreen.js - Updated with Firebase real-time data
 import React, { useContext, useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { AuthContext } from '../context/AuthContext';
 import { database } from '../config/firebase'; // Adjust path

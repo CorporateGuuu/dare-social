@@ -17,7 +17,7 @@ export default function FollowButton({ targetId }) {
       setIsMutual(followingDoc.exists() && followerDoc.exists());
     };
     checkStatus();
-  }, [targetId]);
+  }, [targetId, currentUserId]);
 
   const toggleFollow = async () => {
     try {

@@ -1,20 +1,22 @@
 import { useContext, useState, useEffect } from "react";
-import { Image, StyleSheet, TouchableOpacity, View, Pressable, Animated, ScrollView } from "react-native";
+import { Image, StyleSheet, TouchableOpacity, View, FlatList, SafeAreaView } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../context/AuthContext';
-import { useAnimations } from '../hooks/useAnimations';
-import { generateReferralCode, redeemReferralCode, getUserReferralData, checkReferralCodeValidity } from '../services/referralService';
+import { getUserReferralData } from '../services/referralService';
 import { useThemeColor } from '../../hooks/use-theme-color';
 import { ThemedView } from '../../components/themed-view';
 import { ThemedText } from '../../components/themed-text';
 import { useDares } from '../hooks/useDares';
 import { useUserActivities } from '../hooks/useUserActivities';
+import { getUserPosts } from '../services/postService';
 
 export default function ProfileScreen(props) {
   const { navigation, route } = props;
   const { user, logout, loading } = useContext(AuthContext);
-  const { messageScale, handlePressIn, handlePressOut } = useAnimations();
   const [referralData, setReferralData] = useState({});
+  const [userPosts, setUserPosts] = useState([]);
+  const [postsLoading, setPostsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('posts');
 
   // Theme colors
   const backgroundColor = useThemeColor({}, 'background');
@@ -28,11 +30,34 @@ export default function ProfileScreen(props) {
   const isOwnProfile = !route.params?.user;
 
   // Hook calls for profile sections
-  const { dares } = useDares();
+  const dares = useDares();
   const { activities, loading: activitiesLoading } = useUserActivities(profileUser?.id || user?.id, 3);
 
   // Filter user's dares (assuming dares from useDares are all dares, filter by creator or participants)
   const userDares = isOwnProfile ? dares.filter(dare => dare.creatorId === user?.id || dare.participants.includes(user?.id)) : [];
+
+  // Load user posts
+  useEffect(() => {
+    const loadPosts = async () => {
+      if (profileUser?.id) {
+        setPostsLoading(true);
+        try {
+          const response = await getUserPosts(profileUser.id);
+          if (response.data && response.data.posts) {
+            setUserPosts(response.data.posts);
+          } else {
+            setUserPosts([]);
+          }
+        } catch (error) {
+          console.error('Error loading posts:', error);
+          setUserPosts([]);
+        } finally {
+          setPostsLoading(false);
+        }
+      }
+    };
+    loadPosts();
+  }, [profileUser?.id]);
 
   useEffect(() => {
     if (isOwnProfile && user) {
@@ -68,180 +93,127 @@ export default function ProfileScreen(props) {
   }
 
   return (
-    <ThemedView style={dynamicStyles.container}>
-      <View style={dynamicStyles.header}>
-        <Image source={{ uri: profileUser.avatar }} style={dynamicStyles.avatarHeader} />
-        <ThemedText style={dynamicStyles.logo}>{isOwnProfile ? '▲' : profileUser.username || '@user'}</ThemedText>
-        {isOwnProfile && (
-          <View style={dynamicStyles.stones}>
-            <ThemedText style={dynamicStyles.stonesText}>∘ {profileUser.stones}</ThemedText>
-          </View>
-        )}
-        {isOwnProfile && (
-          <TouchableOpacity onPress={logout}>
-            <ThemedText style={dynamicStyles.logout}>Logout</ThemedText>
+    <SafeAreaView style={dynamicStyles.safeContainer}>
+      {/* Settings and Logout buttons for own profile */}
+      {isOwnProfile && (
+        <View style={dynamicStyles.settingsButtonContainer}>
+          <TouchableOpacity onPress={() => navigation.navigate('Privacy')}>
+            <Ionicons name="settings-outline" size={24} color={accentColor} />
           </TouchableOpacity>
-        )}
-      </View>
+          <TouchableOpacity onPress={logout}>
+            <Ionicons name="log-out-outline" size={24} color={accentColor} />
+          </TouchableOpacity>
+        </View>
+      )}
 
-      <ThemedView style={dynamicStyles.content}>
-        <Image source={{ uri: profileUser.avatar }} style={dynamicStyles.realAvatar} />
-        <ThemedText style={dynamicStyles.name}>{profileUser.username || '@you'}</ThemedText>
-        <ThemedText style={dynamicStyles.meta}>Stone: {profileUser.stones} 🪨  •  Level: {profileUser.level}  •  Streak: {profileUser.currentStreak}  •  Completed: {profileUser.totalDaresCompleted}</ThemedText>
+      <ThemedView style={dynamicStyles.container}>
+        {/* Profile Header */}
+        <View style={dynamicStyles.profileHeader}>
+          <Image source={{ uri: profileUser.avatar }} style={dynamicStyles.avatar} />
+          <ThemedText style={dynamicStyles.username}>{profileUser.username || '@you'}</ThemedText>
+          <ThemedText style={dynamicStyles.bio}>
+            Level {profileUser.level} • {profileUser.currentStreak || 0} day streak 🏆
+          </ThemedText>
 
-        {/* Statistics Section */}
-        <ThemedView style={dynamicStyles.statsBlock}>
-          <ThemedText style={dynamicStyles.statsTitle}>Statistics</ThemedText>
-          <View style={dynamicStyles.statsGrid}>
+          {/* Stats Row */}
+          <View style={dynamicStyles.statsContainer}>
+            <View style={dynamicStyles.statItem}>
+              <ThemedText style={dynamicStyles.statValue}>{userPosts.length}</ThemedText>
+              <ThemedText style={dynamicStyles.statLabel}>Posts</ThemedText>
+            </View>
+            <View style={dynamicStyles.statItem}>
+              <ThemedText style={dynamicStyles.statValue}>{profileUser.totalDaresCompleted || 0}</ThemedText>
+              <ThemedText style={dynamicStyles.statLabel}>Dares</ThemedText>
+            </View>
             <View style={dynamicStyles.statItem}>
               <ThemedText style={dynamicStyles.statValue}>{profileUser.wins || 0}</ThemedText>
               <ThemedText style={dynamicStyles.statLabel}>Wins</ThemedText>
             </View>
-            <View style={dynamicStyles.statItem}>
-              <ThemedText style={dynamicStyles.statValue}>{profileUser.losses || 0}</ThemedText>
-              <ThemedText style={dynamicStyles.statLabel}>Losses</ThemedText>
-            </View>
-            <View style={dynamicStyles.statItem}>
-              <ThemedText style={dynamicStyles.statValue}>{profileUser.rank || 'N/A'}</ThemedText>
-              <ThemedText style={dynamicStyles.statLabel}>Rank</ThemedText>
-            </View>
           </View>
-          <View style={dynamicStyles.statsRow}>
-            <ThemedText style={dynamicStyles.winRateText}>
-              Win Rate: {profileUser.wins !== undefined && profileUser.losses !== undefined ?
-                Math.round((profileUser.wins / (profileUser.wins + profileUser.losses)) * 100) : 'N/A'}%
-            </ThemedText>
-          </View>
-          <View style={dynamicStyles.statsRow}>
-            <ThemedText style={dynamicStyles.stonesSummary}>
-              Stones Earned: {profileUser.stones_earned || 0} 🪨 • Stones Spent: {profileUser.stones_spent || 0} 🪨
-            </ThemedText>
-          </View>
-          {(profileUser.mutuals && profileUser.mutuals.length > 0) && (
-            <View style={dynamicStyles.statsRow}>
-              <ThemedText style={dynamicStyles.mutualsText}>
-                Mutuals: {profileUser.mutuals.length} followers
-              </ThemedText>
-            </View>
+
+          {/* Action Button */}
+          {isOwnProfile ? (
+            <TouchableOpacity style={dynamicStyles.editProfileButton} onPress={() => navigation.navigate('EditProfile')}>
+              <ThemedText style={dynamicStyles.editProfileText}>Edit Profile</ThemedText>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={dynamicStyles.messageButton} onPress={() => navigation.navigate('Chat', { user: profileUser.username })}>
+              <ThemedText style={dynamicStyles.messageText}>Message</ThemedText>
+            </TouchableOpacity>
           )}
-        </ThemedView>
+        </View>
 
-        {!isOwnProfile && (
-          <View style={dynamicStyles.actionButtons}>
-            <Pressable
-              onPressIn={() => handlePressIn(messageScale)}
-              onPressOut={() => handlePressOut(messageScale)}
-              onPress={() => navigation.navigate('Chat', { user: profileUser.username })}
-            >
-              <Animated.View style={[dynamicStyles.actionButton, dynamicStyles.messageButton, { transform: [{ scale: messageScale }] }]}>
-                <Ionicons name="chatbubble-outline" size={20} color={textColor} />
-                <ThemedText style={dynamicStyles.actionText}>Message</ThemedText>
-              </Animated.View>
-            </Pressable>
-          </View>
-        )}
+        {/* Tab Navigation */}
+        <View style={dynamicStyles.tabContainer}>
+          <TouchableOpacity
+            style={[dynamicStyles.tab, activeTab === 'posts' && dynamicStyles.activeTab]}
+            onPress={() => setActiveTab('posts')}
+          >
+            <Ionicons name="grid-outline" size={20} color={activeTab === 'posts' ? accentColor : '#888'} />
+            <ThemedText style={[dynamicStyles.tabText, activeTab === 'posts' && dynamicStyles.activeTabText]}>
+              Posts
+            </ThemedText>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[dynamicStyles.tab, activeTab === 'dares' && dynamicStyles.activeTab]}
+            onPress={() => setActiveTab('dares')}
+          >
+            <Ionicons name="flash-outline" size={20} color={activeTab === 'dares' ? accentColor : '#888'} />
+            <ThemedText style={[dynamicStyles.tabText, activeTab === 'dares' && dynamicStyles.activeTabText]}>
+              Dares
+            </ThemedText>
+          </TouchableOpacity>
+        </View>
 
-        {isOwnProfile && (
-          <Pressable onPress={() => navigation.navigate('Referrals')} style={dynamicStyles.block}>
-            <ThemedText style={dynamicStyles.blockTitle}>Referrals 🎁</ThemedText>
-            <ThemedText>Tap to view referral details and share your code</ThemedText>
-          </Pressable>
-        )}
-
-        {/* My Dares Section */}
-        <Pressable
-          onPress={() => isOwnProfile && navigation.navigate('MyDares')}
-          style={[dynamicStyles.block, !isOwnProfile && { pressable: false }]}
-          disabled={!isOwnProfile}
-        >
-          <ThemedText style={dynamicStyles.blockTitle}>
-            {isOwnProfile ? 'My Dares' : 'Their Dares'} ⚡
-          </ThemedText>
-          {userDares.length > 0 ? (
-            <>
-              <ThemedText style={dynamicStyles.subtitle}>{userDares.length} active dares</ThemedText>
-              {userDares.slice(0, 2).map((dare) => (
+        {/* Content Area */}
+        {activeTab === 'posts' ? (
+          postsLoading ? (
+            <View style={dynamicStyles.emptyContainer}>
+              <ThemedText>Loading posts...</ThemedText>
+            </View>
+          ) : userPosts.length > 0 ? (
+            <FlatList
+              style={dynamicStyles.postsGrid}
+              data={userPosts}
+              keyExtractor={(item) => item.id}
+              numColumns={3}
+              renderItem={({ item }) => (
+                <TouchableOpacity style={dynamicStyles.postItem} onPress={() => navigation.navigate('PostDetails', { post: item })}>
+                  <Image source={{ uri: item.image || profileUser.avatar }} style={dynamicStyles.postImage} />
+                </TouchableOpacity>
+              )}
+            />
+          ) : (
+            <View style={dynamicStyles.emptyContainer}>
+              <Ionicons name="images-outline" size={64} color="#ccc" />
+              <ThemedText style={dynamicStyles.emptyText}>No posts yet</ThemedText>
+            </View>
+          )
+        ) : (
+          // Dares view (simplified)
+          <View style={dynamicStyles.postsGrid}>
+            {userDares.length > 0 ? (
+              userDares.slice(0, 9).map((dare) => (
                 <TouchableOpacity
                   key={dare.id}
+                  style={dynamicStyles.postItem}
                   onPress={() => navigation.navigate('DareDetails', { dare })}
-                  style={dynamicStyles.dareItem}
                 >
-                  <ThemedText style={dynamicStyles.dareTitle}>{dare.title}</ThemedText>
-                  <ThemedText style={dynamicStyles.dareMeta}>
-                    {dare.wagerType === 'none' ? 'Practice' : `${dare.wagerAmount} stone${dare.wagerAmount > 1 ? 's' : ''}`} • {dare.status}
-                  </ThemedText>
-                </TouchableOpacity>
-              ))}
-              {userDares.length > 2 && (
-                <ThemedText style={dynamicStyles.viewMore}>Tap to view all...</ThemedText>
-              )}
-            </>
-          ) : (
-            <ThemedText style={dynamicStyles.emptyText}>No active dares yet</ThemedText>
-          )}
-        </Pressable>
-        {/* Activity Section */}
-        <Pressable
-          onPress={() => navigation.navigate('ActivityFeed')}
-          style={dynamicStyles.block}
-        >
-          <ThemedText style={dynamicStyles.blockTitle}>Recent Activity 📈</ThemedText>
-          {activitiesLoading ? (
-            <ThemedText style={dynamicStyles.emptyText}>Loading activities...</ThemedText>
-          ) : activities.length > 0 ? (
-            <>
-              {activities.slice(0, 2).map((activity) => {
-                const timeAgo = activity.createdAt ? getTimeAgo(activity.createdAt) : 'Unknown time';
-                return (
-                  <View key={activity.id} style={dynamicStyles.activityItem}>
-                    <ThemedText style={dynamicStyles.activityText}>
-                      {getActivityText(activity)}
-                    </ThemedText>
-                    <ThemedText style={dynamicStyles.activityMeta}>
-                      {timeAgo}
-                    </ThemedText>
+                  <View style={[dynamicStyles.postImage, { backgroundColor: accentColor, justifyContent: 'center', alignItems: 'center' }]}>
+                    <Ionicons name="flash" size={24} color="white" />
                   </View>
-                );
-              })}
-              <ThemedText style={dynamicStyles.viewMore}>Tap to view all activity...</ThemedText>
-            </>
-          ) : (
-            <ThemedText style={dynamicStyles.emptyText}>No recent activity</ThemedText>
-          )}
-        </Pressable>
-        {/* Settings Section */}
-        {isOwnProfile && (
-          <ThemedView style={dynamicStyles.block}>
-            <ThemedText style={dynamicStyles.blockTitle}>Settings ⚙️</ThemedText>
-            <TouchableOpacity style={dynamicStyles.settingItem} onPress={() => navigation.navigate('EditProfile')}>
-              <Ionicons name="person-outline" size={20} color={accentColor} style={dynamicStyles.settingIcon} />
-              <ThemedText style={dynamicStyles.settingText}>Edit Profile</ThemedText>
-              <Ionicons name="chevron-forward" size={16} color="#666" />
-            </TouchableOpacity>
-            <TouchableOpacity style={dynamicStyles.settingItem} onPress={() => navigation.navigate('Notifications')}>
-              <Ionicons name="notifications-outline" size={20} color={accentColor} style={dynamicStyles.settingIcon} />
-              <ThemedText style={dynamicStyles.settingText}>Notifications</ThemedText>
-              <Ionicons name="chevron-forward" size={16} color="#666" />
-            </TouchableOpacity>
-            <TouchableOpacity style={dynamicStyles.settingItem} onPress={() => navigation.navigate('Privacy')}>
-              <Ionicons name="lock-closed-outline" size={20} color={accentColor} style={dynamicStyles.settingIcon} />
-              <ThemedText style={dynamicStyles.settingText}>Privacy & Security</ThemedText>
-              <Ionicons name="chevron-forward" size={16} color="#666" />
-            </TouchableOpacity>
-            <TouchableOpacity style={dynamicStyles.settingItem} onPress={() => navigation.navigate('Wallet')}>
-              <Ionicons name="wallet-outline" size={20} color={accentColor} style={dynamicStyles.settingIcon} />
-              <ThemedText style={dynamicStyles.settingText}>Wallet</ThemedText>
-              <Ionicons name="chevron-forward" size={16} color="#666" />
-            </TouchableOpacity>
-            <TouchableOpacity style={[dynamicStyles.settingItem, dynamicStyles.settingItemLast]} onPress={() => navigation.navigate('Help')}>
-              <Ionicons name="help-circle-outline" size={20} color={accentColor} style={dynamicStyles.settingIcon} />
-              <ThemedText style={dynamicStyles.settingText}>Help & Support</ThemedText>
-              <Ionicons name="chevron-forward" size={16} color="#666" />
-            </TouchableOpacity>
-          </ThemedView>
+                </TouchableOpacity>
+              ))
+            ) : (
+              <View style={dynamicStyles.emptyContainer}>
+                <Ionicons name="flash-outline" size={64} color="#ccc" />
+                <ThemedText style={dynamicStyles.emptyText}>No dares yet</ThemedText>
+              </View>
+            )}
+          </View>
         )}
       </ThemedView>
-    </ThemedView>
+    </SafeAreaView>
   );
 }
 
@@ -272,23 +244,74 @@ const getActivityText = (activity) => {
 };
 
 const getDynamicStyles = (backgroundColor, cardColor, textColor, accentColor) => StyleSheet.create({
-  container: { flex: 1 },
+  safeContainer: { flex: 1, backgroundColor: backgroundColor },
+  container: { flex: 1, backgroundColor: backgroundColor },
+  settingsButtonContainer: { position: 'absolute', top: 10, right: 20, flexDirection: 'row', gap: 15, zIndex: 10 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: Array.isArray(backgroundColor) ? backgroundColor[0] : backgroundColor
+    backgroundColor: backgroundColor
   },
   avatarHeader: { width: 40, height: 40, borderRadius: 20 },
   logo: { flex: 1, textAlign: 'center', fontSize: 24 },
   stones: {},
   stonesText: { fontSize: 16 },
   logout: { marginLeft: 10, color: accentColor },
+
+  // Profile Header Section
+  profileHeader: { alignItems: 'center', padding: 20 },
+  avatar: { width: 80, height: 80, borderRadius: 40, marginBottom: 12, borderWidth: 2, borderColor: accentColor },
+  username: { fontSize: 18, fontWeight: '700', marginBottom: 4 },
+  bio: { fontSize: 14, textAlign: 'center', marginBottom: 12, color: textColor },
+
+  // Stats Section
+  statsContainer: { flexDirection: 'row', justifyContent: 'space-around', width: '100%', marginBottom: 16 },
+  statItem: { alignItems: 'center' },
+  statValue: { fontSize: 18, fontWeight: 'bold', color: textColor },
+  statLabel: { fontSize: 12, color: '#888', marginTop: 4 },
+
+  // Edit Profile Button
+  editProfileButton: {
+    backgroundColor: cardColor,
+    borderRadius: 6,
+    paddingHorizontal: 32,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: '#ddd'
+  },
+  editProfileText: { fontSize: 14, fontWeight: '600' },
+
+  // Action Button for Others
+  messageButton: {
+    backgroundColor: accentColor,
+    borderRadius: 6,
+    paddingHorizontal: 32,
+    paddingVertical: 8
+  },
+  messageText: { fontSize: 14, fontWeight: '600', color: 'white' },
+
+  // Tab Navigation
+  tabContainer: { flexDirection: 'row', borderTopWidth: 0.5, borderTopColor: '#ddd', borderBottomWidth: 0.5, borderBottomColor: '#ddd', marginTop: 10 },
+  tab: { flex: 1, alignItems: 'center', paddingVertical: 12 },
+  activeTab: { borderBottomWidth: 1, borderBottomColor: accentColor },
+  tabText: { fontSize: 14, color: '#888' },
+  activeTabText: { color: accentColor },
+
+  // Post Grid
+  postsGrid: { flex: 1 },
+  postItem: { flex: 1, margin: 1 },
+  postImage: { width: '100%', aspectRatio: 1 },
+
+  // Empty State
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+
+  // Legacy styles (keeping for compatibility)
   content: {
     flex: 1,
     padding: 16,
     alignItems: "center",
-    backgroundColor: Array.isArray(backgroundColor) ? backgroundColor[0] : backgroundColor
+    backgroundColor: backgroundColor
   },
   realAvatar: { width: 96, height: 96, borderRadius: 48, marginTop: 8, marginBottom: 10, borderWidth: 2, borderColor: accentColor },
   name: { fontSize: 20, fontWeight: "700" },
@@ -297,7 +320,6 @@ const getDynamicStyles = (backgroundColor, cardColor, textColor, accentColor) =>
   blockTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 8 },
   actionButtons: { flexDirection: 'row', justifyContent: 'center', marginVertical: 16 },
   actionButton: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 25, borderWidth: 1, borderColor: accentColor },
-  messageButton: { backgroundColor: cardColor },
   actionText: { fontSize: 16, marginLeft: 8 },
   subtitle: { fontSize: 14, marginBottom: 8, color: '#888' },
   dareItem: { marginVertical: 4 },
@@ -315,10 +337,6 @@ const getDynamicStyles = (backgroundColor, cardColor, textColor, accentColor) =>
   statsBlock: { alignSelf: "stretch", backgroundColor: cardColor, borderRadius: 12, padding: 12, marginBottom: 12 },
   statsTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 12 },
   statsGrid: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 12 },
-  statItem: { alignItems: 'center' },
-  statValue: { fontSize: 24, fontWeight: 'bold', color: accentColor },
-  statLabel: { fontSize: 12, color: '#888', marginTop: 4 },
-  statsRow: { marginBottom: 8 },
   stonesSummary: { fontSize: 14, textAlign: 'center' },
   mutualsText: { fontSize: 14, textAlign: 'center', color: '#666' },
   winRateText: { fontSize: 16, textAlign: 'center', fontWeight: 'bold', color: accentColor },

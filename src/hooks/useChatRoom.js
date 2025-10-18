@@ -1,7 +1,7 @@
 // src/hooks/useChatRoom.js
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
-  collection, doc, addDoc, query, orderBy, onSnapshot, serverTimestamp, setDoc, where, Timestamp,
+  collection, doc, query, orderBy, onSnapshot, serverTimestamp, setDoc, where, Timestamp,
 } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
 import { auth, db, functions } from "../lib/firebase";
@@ -11,7 +11,6 @@ export function useChatRoom(roomId) {
   const [room, setRoom] = useState(null);
   const [loading, setLoading] = useState(true);
   const [typingUsers, setTypingUsers] = useState([]);
-  const typingRef = useRef(null);
 
   // live room meta
   useEffect(() => {
@@ -72,7 +71,7 @@ export function useChatRoom(roomId) {
   const otherId = useMemo(() => {
     const me = auth.currentUser?.uid;
     return room?.participants?.find((p) => p !== me);
-  }, [room, auth.currentUser?.uid]);
+  }, [room]);
 
   // is other participant typing
   const isOtherTyping = useMemo(() => {

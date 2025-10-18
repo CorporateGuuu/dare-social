@@ -8,6 +8,7 @@ import VotingModal from '../components/VotingModal';
 import { AuthContext } from '../context/AuthContext';
 import { useFadeIn, useSwipeGesture } from '../hooks/useAnimations';
 
+
 import { useNavigation } from '@react-navigation/native';
 
 const ChallengeCard = React.memo(({ item, onReject, onAccept }) => {
@@ -46,10 +47,49 @@ const ChallengesScreen = () => {
   const navigation = useNavigation();
   const fadeAnim = useFadeIn(500);
 
+
+
   const [challenges, setChallenges] = useState([
-    { id: '1', title: 'The Kings will be better than the Bulls', opponent: '@frankvecchie', stakes: '25', status: 'active' },
-    { id: '2', title: 'I will run a marathon', opponent: 'Waiting', stakes: '25', status: 'pending' },
-    { id: '3', title: 'The Kings won', opponent: '@mattbraun', stakes: '25', status: 'completed', result: 'won' },
+    {
+      id: '1',
+      title: 'The Kings will be better than the Bulls',
+      opponent: '@frankvecchie',
+      stakes: '25',
+      status: 'active',
+      dares: [
+        'Predict NBA game outcome',
+        'Bet on player performance'
+      ],
+      achievements: ['Sports Analyst'],
+      punishment: 'Loser buys dinner',
+      involvesBestFriend: false
+    },
+    {
+      id: '2',
+      title: 'I will run a marathon',
+      opponent: 'Waiting',
+      stakes: '25',
+      status: 'pending',
+      dares: ['Complete full marathon distance'],
+      achievements: ['Marathon Runner'],
+      punishment: 'Loser submits embarrassing photo',
+      involvesBestFriend: false
+    },
+    {
+      id: '3',
+      title: 'The Kings won',
+      opponent: '@mattbraun',
+      stakes: '25',
+      status: 'completed',
+      result: 'won',
+      dares: [
+        'Predict game winner',
+        'Bet on final score'
+      ],
+      achievements: ['Sports Analyst', 'Winning Streak'],
+      punishment: 'Loser buys lunch for winner',
+      involvesBestFriend: true
+    },
   ]);
 
   const [votingModalVisible, setVotingModalVisible] = useState(false);
@@ -116,11 +156,37 @@ const ChallengesScreen = () => {
 
     return (
       <Animated.View style={[styles.card]}>
-        <Text style={styles.cardTitle}>{item.title}</Text>
+        <View style={styles.headerRow}>
+          <Text style={styles.cardTitle}>{item.title}</Text>
+          {item.involvesBestFriend && <Text style={styles.bestFriendBadge}>👥 Best Friend</Text>}
+        </View>
+
         <View style={styles.opponentRow}>
           <Text style={styles.opponentText}>vs {item.opponent}</Text>
           <Text style={styles.stakesText}>∘ {item.stakes}</Text>
         </View>
+
+        <View style={styles.daresSection}>
+          <Text style={styles.sectionTitle}>Dares:</Text>
+          {item.dares.map((dare, index) => (
+            <Text key={index} style={styles.dareItem}>• {dare}</Text>
+          ))}
+        </View>
+
+        <View style={styles.achievementsSection}>
+          <Text style={styles.sectionTitle}>Achievements:</Text>
+          <View style={styles.achievementsRow}>
+            {item.achievements.map((achievement, index) => (
+              <Text key={index} style={styles.achievementBadge}>{achievement}</Text>
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.punishmentSection}>
+          <Text style={styles.sectionTitle}>Punishment:</Text>
+          <Text style={styles.punishmentText}>{item.punishment}</Text>
+        </View>
+
         {item.status === 'completed' && !item.votingActive && (
           <TouchableOpacity style={styles.proofButton} onPress={handleSubmitProof}>
             <Text style={styles.proofText}>Submit Proof</Text>
@@ -135,7 +201,14 @@ const ChallengesScreen = () => {
         <TouchableOpacity style={styles.chatButton} onPress={handleOpenChat}>
           <Text style={styles.chatText}>Chat</Text>
         </TouchableOpacity>
-        {/* Existing status texts */}
+
+        {item.status === 'active' && <Text style={styles.statusText}>Accept by 12:26 PM</Text>}
+        {item.status === 'pending' && <Text style={styles.statusText}>Waiting for Opponent</Text>}
+        {item.status === 'completed' && (
+          <Text style={item.result === 'won' ? styles.wonText : styles.lostText}>
+            {item.result === 'won' ? 'You Won' : 'You Lost'}
+          </Text>
+        )}
       </Animated.View>
     );
   };
@@ -176,10 +249,29 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     flexDirection: 'column',
   },
-  cardTitle: { color: 'white', fontSize: 18, fontWeight: 'bold' },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  bestFriendBadge: { color: '#FFD700', fontSize: 14, fontWeight: 'bold' },
+  cardTitle: { color: 'white', fontSize: 18, fontWeight: 'bold', flex: 1 },
   opponentRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
   opponentText: { color: '#888' },
   stakesText: { color: 'white' },
+  daresSection: { marginTop: 15 },
+  sectionTitle: { color: '#FFD700', fontSize: 14, fontWeight: 'bold', marginBottom: 5 },
+  dareItem: { color: '#CCC', fontSize: 14, marginBottom: 2 },
+  achievementsSection: { marginTop: 10 },
+  achievementsRow: { flexDirection: 'row', flexWrap: 'wrap' },
+  achievementBadge: {
+    backgroundColor: '#3A3A3A',
+    color: '#FFD700',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    fontSize: 12,
+    marginRight: 5,
+    marginBottom: 5,
+  },
+  punishmentSection: { marginTop: 10 },
+  punishmentText: { color: '#FFA500', fontSize: 14, fontStyle: 'italic' },
   statusText: { color: '#FF0000', marginTop: 5 },
   wonText: { color: '#00FF00', marginTop: 5 },
   lostText: { color: '#FF0000', marginTop: 5 },

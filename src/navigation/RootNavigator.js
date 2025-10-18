@@ -3,11 +3,13 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { useNavigation } from '@react-navigation/native';
 
 import { TouchableOpacity, View } from 'react-native';
 
 // Screens
 import AchievementsScreen from '../screens/AchievementsScreen';
+import AchievementScreen from '../screens/AchievementScreen';
 import ActivityFeedScreen from '../screens/ActivityFeedScreen';
 import ChallengesScreen from '../screens/ChallengesScreen';
 import PlaceholderScreen from '../screens/PlaceholderScreen';
@@ -18,8 +20,6 @@ import Create_Challenge_Home from '../screens/CreateChallengeScreen';
 import CreateChallengeFormScreen from '../screens/CreateChallengeFormScreen';
 import DareDetailsScreen from '../screens/DareDetailsScreen';
 import Frame_Market from '../screens/FrameMarketScreen';
-import HomeFeedScreen from '../screens/HomeFeedScreen';
-import LeaderboardScreen from '../screens/LeaderboardScreen';
 import LoginScreen from '../screens/LoginScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
 import PostsScreen from '../screens/PostsScreen';
@@ -40,7 +40,9 @@ const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 // Create header component with search and frames buttons
-function HeaderRight({ navigation }) {
+function HeaderRight() {
+  const navigation = useNavigation();
+
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingRight: 10 }}>
       <TouchableOpacity onPress={() => navigation.navigate('Search')}>
@@ -65,6 +67,9 @@ function MainTabs() {
           if (route.name === 'Challenges') {
             return <MaterialIcons name="whatshot" size={size ?? 20} color={color ?? "#cccccc"} />;
           }
+          if (route.name === 'Frames') {
+            return <MaterialIcons name="filter-frames" size={size ?? 20} color={color ?? "#cccccc"} />;
+          }
           if (route.name === 'Messages') {
             return <Icon name={focused ? 'chatbubbles' : 'chatbubbles-outline'} size={size ?? 20} color={color ?? "#cccccc"} />;
           }
@@ -82,8 +87,9 @@ function MainTabs() {
         },
       })}
     >
-      <Tab.Screen name="Home" component={HomeFeedScreen} options={{ tabBarLabel: "Home" }} />
+      <Tab.Screen name="Home" component={ActivityFeedScreen} options={{ tabBarLabel: "Home" }} />
       <Tab.Screen name="Challenges" component={ChallengesScreen} options={{ tabBarLabel: "Challenges" }} />
+      <Tab.Screen name="Frames" component={Frame_Market} options={{ tabBarLabel: "Frames" }} />
       <Tab.Screen name="Messages" component={ChatListScreen} options={{ tabBarLabel: "Messages" }} />
       <Tab.Screen name="Profile" component={ProfileScreen} options={{ tabBarLabel: "Profile" }} />
     </Tab.Navigator>
@@ -105,6 +111,7 @@ const RootNavigator = ({ user }) => {
       <Stack.Screen name="VoteScreen" component={VoteScreen} options={{ headerShown: true, headerRight: HeaderRight, headerStyle: { backgroundColor: '#000000' }, headerTintColor: '#ffffff' }} />
       <Stack.Screen name="Frame_Market" component={Frame_Market} options={{ headerShown: true, headerRight: HeaderRight, headerStyle: { backgroundColor: '#000000' }, headerTintColor: '#ffffff' }} />
       <Stack.Screen name="AchievementsScreen" component={AchievementsScreen} options={{ headerShown: true, headerRight: HeaderRight, headerStyle: { backgroundColor: '#000000' }, headerTintColor: '#ffffff' }} />
+      <Stack.Screen name="AchievementScreen" component={AchievementScreen} options={{ headerShown: true, headerRight: HeaderRight, headerStyle: { backgroundColor: '#000000' }, headerTintColor: '#ffffff' }} />
       <Stack.Screen name="WinnerScreen" component={WinnerScreen} options={{ headerShown: true, headerRight: HeaderRight, headerStyle: { backgroundColor: '#000000' }, headerTintColor: '#ffffff' }} />
       <Stack.Screen name="LoginScreen" component={LoginScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: false }} />

@@ -19,6 +19,7 @@ const AVAILABLE_SCREENS = [
   { name: 'Vote', label: 'Vote', description: 'Vote on challenges' },
   { name: 'Frame_Market', label: 'Frame Market', description: 'Browse frame market' },
   { name: 'Achievements', label: 'Achievements', description: 'View achievements' },
+  { name: 'AchievementScreen', label: 'Dare Results', description: 'View dare results' },
   { name: 'Winner', label: 'Winner', description: 'View winners' },
   { name: 'Tracker', label: 'Tracker', description: 'Track your progress' },
   { name: 'CreateChallengeForm', label: 'Create Challenge Form', description: 'Form for creating challenges' },

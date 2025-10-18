@@ -4,26 +4,35 @@ import {
   RefreshControl,
   ActivityIndicator,
   View,
-  Text,
   StyleSheet,
   TouchableOpacity,
   Image
 } from 'react-native';
-import { collection, query, orderBy, where, getDocs, limit, startAfter, doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
+import { collection, query, orderBy, where, getDocs, limit, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { db, auth } from '../config/firebase';
 import { useFollowing } from '../hooks/useFollowing';
 import CommentsModal from '../components/CommentsModal';
 import PlaceholderCard from '../components/PlaceholderCard';
+import { useThemeColor } from '../../hooks/use-theme-color';
+import { ThemedView } from '../../components/themed-view';
+import { ThemedText } from '../../components/themed-text';
+import { listCompletedDares } from '../lib/firebase';
 
 // Page size for infinite scroll
 const PAGE_SIZE = 20;
 
 export default function ActivityFeedScreen({ navigation }) {
+  const backgroundColor = useThemeColor({}, 'background');
+  const cardColor = useThemeColor({}, 'card');
+  const textColor = useThemeColor({}, 'text');
+  const accentColor = useThemeColor({}, 'accent');
+  const borderColor = useThemeColor({}, 'border');
+  const iconColor = useThemeColor({}, 'icon');
+
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [lastDoc, setLastDoc] = useState(null);
   const [hasMore, setHasMore] = useState(true);
   const [commentsModalVisible, setCommentsModalVisible] = useState(false);
   const [selectedActivityId, setSelectedActivityId] = useState(null);
@@ -58,79 +67,39 @@ export default function ActivityFeedScreen({ navigation }) {
     if (refreshingState) refreshingState(true);
 
     try {
-      const following = await fetchFollowingList();
-      const publicUids = [...following, currentUserId]; // Include self for own posts
+      // Fetch both post activities and completed dares
+      const [postActivities, completedDares] = await Promise.all([
+        fetchPostActivities(loadMore),
+        fetchCompletedDares()
+      ]);
 
-      let q = query(
-        collection(db, 'activities'),
-        where('actorId', 'in', publicUids),
-        orderBy('createdAt', 'desc'),
-        limit(PAGE_SIZE)
-      );
+      // Convert completed dares to activity format
+      const dareActivities = completedDares.map(dare => ({
+        id: `dare-${dare.id}`,
+        type: 'dare',
+        actorId: dare.winner?.uid || currentUserId,
+        ...dare,
+        likes: 0, // Dares don't have likes/comments in the same way
+        comments: 0,
+        liked: false,
+        createdAt: new Date(), // Use completion time
+      }));
 
-      if (loadMore && lastDoc) {
-        q = query(q, startAfter(lastDoc));
+      // Combine and sort by created time (most recent first)
+      const allActivities = [...postActivities, ...dareActivities].sort((a, b) => {
+        const aTime = a.createdAt?.toDate?.() || new Date(a.createdAt || 0);
+        const bTime = b.createdAt?.toDate?.() || new Date(b.createdAt || 0);
+        return bTime - aTime;
+      });
+
+      if (loadMore) {
+        setActivities(prev => [...prev, ...allActivities]);
       } else {
-        // Reset for initial load or refresh
-        setLastDoc(null);
-        setActivities([]);
+        setActivities(allActivities);
       }
 
-      const querySnapshot = await getDocs(q);
-      const newActivities = [];
-
-      for (const docSnap of querySnapshot.docs) {
-        const data = docSnap.data();
-
-        // Skip if activity type is not public (assuming visibility field, but since not specified, assume all are public for now)
-
-        // Fetch likes count
-        const likesSnap = await getDocs(collection(docSnap.ref, 'likes'));
-        const likesCount = likesSnap.size;
-        const likedByUser = likesSnap.docs.some(likeDoc => likeDoc.id === currentUserId);
-
-        // Fetch comments count
-        const commentsSnap = await getDocs(collection(docSnap.ref, 'comments'));
-        const commentsCount = commentsSnap.size;
-
-        // Enhance dare activities with additional data
-        let enhancedData = { ...data };
-
-        if (data.type === 'dare' && data.dareId) {
-          try {
-            const dareDoc = await getDoc(doc(db, 'dares', data.dareId));
-            if (dareDoc.exists()) {
-              const dareData = dareDoc.data();
-              enhancedData = { ...enhancedData, ...dareData };
-            }
-          } catch (error) {
-            console.error('Error fetching dare data:', error);
-          }
-        }
-
-        newActivities.push({
-          id: docSnap.id,
-          ...enhancedData,
-          likes: likesCount,
-          comments: commentsCount,
-          liked: likedByUser,
-        });
-      }
-
-      if (newActivities.length > 0) {
-        setLastDoc(querySnapshot.docs[querySnapshot.docs.length - 1]);
-        if (loadMore) {
-          setActivities(prev => [...prev, ...newActivities]);
-        } else {
-          setActivities(newActivities);
-        }
-      } else {
-        setHasMore(false);
-      }
-
-      if (querySnapshot.docs.length < PAGE_SIZE) {
-        setHasMore(false);
-      }
+      // For now, assume we got all available data
+      setHasMore(allActivities.length >= PAGE_SIZE);
 
     } catch (error) {
       console.error('Error fetching activities:', error);
@@ -138,7 +107,65 @@ export default function ActivityFeedScreen({ navigation }) {
       loadingState(false);
       if (refreshingState) refreshingState(false);
     }
-  }, [currentUserId, hasMore, lastDoc, fetchFollowingList]);
+  }, [currentUserId, hasMore, fetchPostActivities, fetchCompletedDares]);
+
+  // Fetch post activities from Firebase
+  const fetchPostActivities = useCallback(async (loadMore = false) => {
+    const following = await fetchFollowingList();
+    const publicUids = [...following, currentUserId];
+
+    // Split into smaller chunks if following list is too large (Firestore 'in' limit is 10)
+    const uidChunks = [];
+    for (let i = 0; i < publicUids.length; i += 10) {
+      uidChunks.push(publicUids.slice(i, i + 10));
+    }
+
+    const allActivities = [];
+    for (const uidChunk of uidChunks) {
+      const q = query(
+        collection(db, 'activities'),
+        where('actorId', 'in', uidChunk),
+        orderBy('createdAt', 'desc'),
+        limit(10) // Fetch fewer per chunk
+      );
+
+      const querySnapshot = await getDocs(q);
+      for (const docSnap of querySnapshot.docs) {
+        const data = docSnap.data();
+
+        // Fetch likes and comments counts
+        const [likesSnap, commentsSnap] = await Promise.all([
+          getDocs(collection(docSnap.ref, 'likes')),
+          getDocs(collection(docSnap.ref, 'comments'))
+        ]);
+
+        const likesCount = likesSnap.size;
+        const commentsCount = commentsSnap.size;
+        const likedByUser = likesSnap.docs.some(likeDoc => likeDoc.id === currentUserId);
+
+        allActivities.push({
+          id: docSnap.id,
+          ...data,
+          likes: likesCount,
+          comments: commentsCount,
+          liked: likedByUser,
+        });
+      }
+    }
+
+    return allActivities;
+  }, [currentUserId, fetchFollowingList]);
+
+  // Fetch completed dares
+  const fetchCompletedDares = useCallback(async () => {
+    try {
+      const result = await listCompletedDares();
+      return result.data || [];
+    } catch (error) {
+      console.error('Error fetching completed dares:', error);
+      return [];
+    }
+  }, []);
 
   // Initial load
   useEffect(() => {
@@ -191,75 +218,77 @@ export default function ActivityFeedScreen({ navigation }) {
 
   // Render activity item
   const renderActivityItem = ({ item }) => {
+    const dynamicStyles = getDynamicStyles(cardColor, textColor, accentColor, borderColor, iconColor, textColor);
+
     // Similar rendering logic to HomeFeedScreen, adapted for the new structure
     if (item.type === 'dare') {
       return (
-        <View style={styles.postContainer}>
-          <View style={styles.headerRow}>
+        <ThemedView style={dynamicStyles.postContainer}>
+          <View style={dynamicStyles.headerRow}>
             {item.winner && (
               <TouchableOpacity onPress={() => navigation.navigate('Profile', { user: item.winner })}>
-                <Text style={styles.postUsername}>{item.winner.username}</Text>
+                <ThemedText style={dynamicStyles.postUsername}>{item.winner.username}</ThemedText>
               </TouchableOpacity>
             )}
-            <Text style={styles.postHeader}> beat </Text>
+            <ThemedText style={dynamicStyles.postHeader}> beat </ThemedText>
             {item.losers && item.losers.length > 0 && (
               <TouchableOpacity onPress={() => navigation.navigate('Profile', { user: item.losers[0] })}>
-                <Text style={styles.postUsername}>{item.losers[0].username}</Text>
+                <ThemedText style={dynamicStyles.postUsername}>{item.losers[0].username}</ThemedText>
               </TouchableOpacity>
             )}
           </View>
           {item.winnerProof && (
-            <View style={styles.mediaContainer}>
-              <Image source={{ uri: item.winnerProof.mediaUrl }} style={styles.mediaImage} />
-              {item.winnerProof.caption && <Text style={styles.caption}>{item.winnerProof.caption}</Text>}
+            <View style={dynamicStyles.mediaContainer}>
+              <Image source={{ uri: item.winnerProof.mediaUrl }} style={dynamicStyles.mediaImage} />
+              {item.winnerProof.caption && <ThemedText style={dynamicStyles.caption}>{item.winnerProof.caption}</ThemedText>}
             </View>
           )}
           <TouchableOpacity onPress={() => navigation.navigate('DareDetails', { dare: item })}>
             <PlaceholderCard title={item.title} subtitle={`+${item.rewardStone} Stone 🪨`} />
           </TouchableOpacity>
-          <View style={styles.socialBar}>
-            <TouchableOpacity style={styles.socialItem} onPress={() => handleComment(item.id)}>
-              <Text style={styles.icon}>💬</Text>
-              <Text style={styles.count}>{item.comments}</Text>
+          <ThemedView style={dynamicStyles.socialBar}>
+            <TouchableOpacity style={dynamicStyles.socialItem} onPress={() => handleComment(item.id)}>
+              <ThemedText style={dynamicStyles.icon}>💬</ThemedText>
+              <ThemedText style={dynamicStyles.count}>{item.comments}</ThemedText>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.socialItem} onPress={() => handleLike(item.id, item.liked)}>
-              <Text style={styles.icon}>{item.liked ? '❤️' : '🤍'}</Text>
-              <Text style={styles.count}>{item.likes}</Text>
+            <TouchableOpacity style={dynamicStyles.socialItem} onPress={() => handleLike(item.id, item.liked)}>
+              <ThemedText style={dynamicStyles.icon}>{item.liked ? '❤️' : '🤍'}</ThemedText>
+              <ThemedText style={dynamicStyles.count}>{item.likes}</ThemedText>
             </TouchableOpacity>
-          </View>
-        </View>
+          </ThemedView>
+        </ThemedView>
       );
     }
 
     if (item.type === 'post') {
       return (
         <TouchableOpacity onPress={() => navigation.navigate("PostDetails", { activityId: item.id })}>
-          <View style={styles.postContainer}>
-            <View style={styles.headerRow}>
+          <ThemedView style={dynamicStyles.postContainer}>
+            <View style={dynamicStyles.headerRow}>
               <TouchableOpacity onPress={() => navigation.navigate('Profile', { user: { id: item.actorId, username: item.actorId } })}>
-                <Text style={styles.postUsername}>@{item.actorId}</Text>
+                <ThemedText style={dynamicStyles.postUsername}>@{item.actorId}</ThemedText>
               </TouchableOpacity>
             </View>
-            {item.text && <Text style={styles.postText}>{item.text}</Text>}
+            {item.text && <ThemedText style={dynamicStyles.postText}>{item.text}</ThemedText>}
             {item.mediaUrl && (
-              <View style={styles.mediaContainer}>
-                <Image source={{ uri: item.mediaUrl }} style={styles.mediaImage} />
+              <View style={dynamicStyles.mediaContainer}>
+                <Image source={{ uri: item.mediaUrl }} style={dynamicStyles.mediaImage} />
               </View>
             )}
             {item.hashtags && item.hashtags.length > 0 && (
-              <Text style={styles.hashtags}>{item.hashtags.map(tag => '#'+tag).join(' ')}</Text>
+              <ThemedText style={dynamicStyles.hashtags}>{item.hashtags.map(tag => '#'+tag).join(' ')}</ThemedText>
             )}
-            <View style={styles.socialBar}>
-              <TouchableOpacity style={styles.socialItem} onPress={() => handleComment(item.id)}>
-                <Text style={styles.icon}>💬</Text>
-                <Text style={styles.count}>{item.comments}</Text>
+            <ThemedView style={dynamicStyles.socialBar}>
+              <TouchableOpacity style={dynamicStyles.socialItem} onPress={() => handleComment(item.id)}>
+                <ThemedText style={dynamicStyles.icon}>💬</ThemedText>
+                <ThemedText style={dynamicStyles.count}>{item.comments}</ThemedText>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.socialItem} onPress={() => handleLike(item.id, item.liked)}>
-                <Text style={styles.icon}>{item.liked ? '❤️' : '🤍'}</Text>
-                <Text style={styles.count}>{item.likes}</Text>
+              <TouchableOpacity style={dynamicStyles.socialItem} onPress={() => handleLike(item.id, item.liked)}>
+                <ThemedText style={dynamicStyles.icon}>{item.liked ? '❤️' : '🤍'}</ThemedText>
+                <ThemedText style={dynamicStyles.count}>{item.likes}</ThemedText>
               </TouchableOpacity>
-            </View>
-          </View>
+            </ThemedView>
+          </ThemedView>
         </TouchableOpacity>
       );
     }
@@ -271,8 +300,10 @@ export default function ActivityFeedScreen({ navigation }) {
     return <ActivityIndicator style={{ flex: 1 }} />;
   }
 
+  const containerStyles = getDynamicStyles(backgroundColor, cardColor, textColor, accentColor, borderColor, iconColor);
+
   return (
-    <View style={styles.container}>
+    <ThemedView style={containerStyles.container}>
       <FlatList
         data={activities}
         keyExtractor={(item) => item.id}
@@ -283,18 +314,18 @@ export default function ActivityFeedScreen({ navigation }) {
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.5}
         ListFooterComponent={loadingMore ? <ActivityIndicator /> : null}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={containerStyles.listContent}
       />
       <CommentsModal
         isVisible={commentsModalVisible}
         onClose={() => setCommentsModalVisible(false)}
         activityId={selectedActivityId}
       />
-    </View>
+    </ThemedView>
   );
 }
 
-const styles = StyleSheet.create({
+const getDynamicStyles = (backgroundColor, cardColor, textColor, accentColor, borderColor, iconColor) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -303,6 +334,9 @@ const styles = StyleSheet.create({
   },
   postContainer: {
     marginBottom: 16,
+    backgroundColor: cardColor,
+    borderRadius: 8,
+    padding: 16,
   },
   headerRow: {
     flexDirection: 'row',
@@ -313,13 +347,12 @@ const styles = StyleSheet.create({
   postUsername: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#667eea',
+    color: accentColor,
     textDecorationLine: 'underline'
   },
   postHeader: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#ffffff'
   },
   mediaContainer: {
     marginBottom: 8,
@@ -333,16 +366,14 @@ const styles = StyleSheet.create({
   caption: {
     fontSize: 14,
     marginTop: 4,
-    textAlign: 'center',
-    color: '#ffffff'
+    textAlign: 'center'
   },
   postText: {
     fontSize: 16,
-    color: '#ffffff',
     marginBottom: 8
   },
   hashtags: {
-    color: '#667eea',
+    color: accentColor,
     fontSize: 14,
     marginBottom: 8
   },
@@ -352,7 +383,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 8,
     borderTopWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)'
+    borderColor: borderColor
   },
   socialItem: {
     alignItems: 'center',
@@ -361,10 +392,9 @@ const styles = StyleSheet.create({
   icon: {
     fontSize: 22,
     padding: 11,
-    color: '#ffffff'
   },
   count: {
     fontSize: 14,
-    color: '#a1a1aa'
+    color: iconColor
   },
 });

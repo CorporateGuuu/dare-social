@@ -1,7 +1,7 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
 import { useState } from "react";
-import { FlatList, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function Frame_Market() {
   const navigation = useNavigation();
@@ -116,34 +116,7 @@ export default function Frame_Market() {
     );
   };
 
-  const renderStoneRow = ({ item: row }) => {
-    return (
-      <View style={styles.stoneRow}>
-        {row.map((frame, index) => (
-          <View key={frame ? frame.id : `blank-${index}`} style={styles.stoneSlot}>
-            {frame ? (
-              <TouchableOpacity onPress={() => setSelectedFrame(frame)} style={styles.stoneFrame}>
-                <Text style={styles.smallText}>{frame.name}</Text>
-                <View style={styles.smallDiamonds}>
-                  {Array.from({ length: frame.rarity }, (_, i) => <Text key={i} style={styles.smallDiamond}>♦</Text>)}
-                </View>
-              </TouchableOpacity>
-            ) : (
-              <View style={styles.blankSlot}>
-                <Text style={styles.blankText}>Empty</Text>
-              </View>
-            )}
-          </View>
-        ))}
-      </View>
-    );
-  };
 
-  const renderStoneSectionHeader = ({ section }) => (
-    <View style={styles.sectionHeader}>
-      <Text style={styles.sectionTitle}>{section.title}</Text>
-    </View>
-  );
 
   return (
     <View style={styles.container}>
@@ -154,7 +127,7 @@ export default function Frame_Market() {
             style={[styles.headerButton, isSelected(item.key) ? styles.selected : styles.unselected]}
             onPress={() => setSelectedSection(item.key)}
           >
-            <MaterialIcons name={item.icon} size={item.iconSize} color="black" />
+            <MaterialIcons name={item.icon} size={item.iconSize} color="#ffffff" />
             <Text style={styles.headerText}>{item.label}</Text>
           </TouchableOpacity>
         ))}
@@ -172,13 +145,13 @@ export default function Frame_Market() {
             </Text>
             <View style={styles.filterIcons}>
               <TouchableOpacity>
-                <MaterialIcons name="arrow-upward" size={20} color="black" />
+                <MaterialIcons name="arrow-upward" size={20} color="#ffffff" />
               </TouchableOpacity>
               <TouchableOpacity>
-                <MaterialIcons name="arrow-downward" size={20} color="black" />
+                <MaterialIcons name="arrow-downward" size={20} color="#ffffff" />
               </TouchableOpacity>
               <TouchableOpacity>
-                <MaterialIcons name="grade" size={20} color="black" />
+                <MaterialIcons name="grade" size={20} color="#ffffff" />
               </TouchableOpacity>
             </View>
           </View>
@@ -222,42 +195,42 @@ export default function Frame_Market() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
+  container: { flex: 1, backgroundColor: "#1a1a1a" },
   header: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', paddingVertical: 10 },
   headerButton: { width: 131, height: 70, justifyContent: 'center', alignItems: 'center', borderRadius: 8 },
-  selected: { backgroundColor: '#f6f8fa' },
-  unselected: { backgroundColor: '#97b6c8' },
-  headerText: { fontSize: 12, textAlign: 'center', marginTop: 4 },
+  selected: { backgroundColor: '#333333' },
+  unselected: { backgroundColor: '#2a2a2a' },
+  headerText: { fontSize: 12, textAlign: 'center', marginTop: 4, color: '#ffffff' },
   scrollContent: { flex: 1 },
   contentContainer: { padding: 16 },
-  sectionTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 16 },
+  sectionTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 16, color: '#ffffff' },
   selectedFrame: { alignItems: 'center' },
   rarity: { flexDirection: 'row', marginBottom: 8 },
   diamond: { fontSize: 20, color: 'gold', marginHorizontal: 2 },
-  frameName: { fontSize: 18, fontWeight: 'bold', marginBottom: 16 },
-  frameExample: { borderWidth: 2, borderColor: '#ccc', padding: 16, marginBottom: 16, backgroundColor: '#f9f9f9' },
-  exampleText: { fontSize: 16, textAlign: 'center' },
-  purchaseButton: { backgroundColor: '#007bff', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 },
-  purchaseText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  galleryTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 16, marginTop: 20 },
-  galleryBox: { borderWidth: 2, borderColor: '#ccc', padding: 10 },
+  frameName: { fontSize: 18, fontWeight: 'bold', marginBottom: 16, color: '#ffffff' },
+  frameExample: { borderWidth: 2, borderColor: '#555555', padding: 16, marginBottom: 16, backgroundColor: '#333333' },
+  exampleText: { fontSize: 16, textAlign: 'center', color: '#cccccc' },
+  purchaseButton: { backgroundColor: '#667eea', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 },
+  purchaseText: { color: '#ffffff', fontSize: 16, fontWeight: 'bold' },
+  galleryTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 16, marginTop: 20, color: '#ffffff' },
+  galleryBox: { borderWidth: 2, borderColor: '#555555', padding: 10, backgroundColor: '#2a2a2a' },
   galleryHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  balanceText: { fontSize: 16, fontWeight: 'bold' },
+  balanceText: { fontSize: 16, fontWeight: 'bold', color: '#ffffff' },
   filterIcons: { flexDirection: 'row', gap: 10 },
-  card: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#eee', marginVertical: 8, padding: 16, borderRadius: 8 },
+  card: { backgroundColor: '#2a2a2a', borderWidth: 1, borderColor: '#555555', marginVertical: 8, padding: 16, borderRadius: 8 },
   cardRarity: { flexDirection: 'row', justifyContent: 'center', marginBottom: 8 },
   cardDiamond: { fontSize: 16, color: 'gold', marginHorizontal: 2 },
-  cardName: { fontSize: 16, fontWeight: 'bold', textAlign: 'center', marginBottom: 8 },
-  cardPrice: { fontSize: 14, textAlign: 'center', color: '#888' },
-  finalizedText: { fontSize: 16, textAlign: 'center', color: 'blue' },
+  cardName: { fontSize: 16, fontWeight: 'bold', textAlign: 'center', marginBottom: 8, color: '#ffffff' },
+  cardPrice: { fontSize: 14, textAlign: 'center', color: '#cccccc' },
+  finalizedText: { fontSize: 16, textAlign: 'center', color: '#667eea' },
   iconRow: { flexDirection: 'row', justifyContent: 'space-around', width: 200, marginTop: 16 },
   sectionContainer: { marginBottom: 16 },
   stoneRow: { flexDirection: 'row', justifyContent: 'space-between', height: 80, marginBottom: 8 },
-  stoneSlot: { width: '30%', marginHorizontal: 4, height: '100%', borderWidth: 1, borderColor: '#ccc', alignItems: 'center', justifyContent: 'center', borderRadius: 8 },
+  stoneSlot: { width: '30%', marginHorizontal: 4, height: '100%', borderWidth: 1, borderColor: '#555555', alignItems: 'center', justifyContent: 'center', borderRadius: 8, backgroundColor: '#2a2a2a' },
   stoneFrame: { alignItems: 'center' },
-  smallText: { fontSize: 12, textAlign: 'center' },
+  smallText: { fontSize: 12, textAlign: 'center', color: '#cccccc' },
   smallDiamonds: { flexDirection: 'row', marginTop: 4 },
   smallDiamond: { fontSize: 10, color: 'gold', marginHorizontal: 1 },
   blankSlot: { alignItems: 'center', justifyContent: 'center' },
-  blankText: { fontSize: 12, color: '#ccc' },
+  blankText: { fontSize: 12, color: '#888888' },
 });

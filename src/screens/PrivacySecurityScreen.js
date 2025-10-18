@@ -210,7 +210,7 @@ const PrivacySecurityScreen = ({ navigation }) => {
           <View style={dynamicStyles.settingItem}>
             <View style={dynamicStyles.settingContent}>
               <ThemedText style={dynamicStyles.settingLabel}>Show Online Status</ThemedText>
-              <ThemedText style={dynamicStyles.settingDescription}>Let others see when you're online</ThemedText>
+              <ThemedText style={dynamicStyles.settingDescription}>Let others see when you&apos;re online</ThemedText>
             </View>
             <Switch
               value={privacy.showOnlineStatus}

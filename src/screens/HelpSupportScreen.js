@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext } from 'react';
 import { View, StyleSheet, TouchableOpacity, ScrollView, Linking, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../context/AuthContext';
@@ -223,7 +223,7 @@ const HelpSupportScreen = ({ navigation }) => {
         {/* Additional Help */}
         <View style={dynamicStyles.helpSection}>
           <Ionicons name="heart" size={20} color={accentColor} />
-          <ThemedText style={dynamicStyles.helpText}>
+            <ThemedText style={dynamicStyles.helpText}>
             We're here to help! Our support team is committed to making your Dare Social experience amazing. If you can't find what you're looking for, don't hesitate to reach out.
           </ThemedText>
         </View>
