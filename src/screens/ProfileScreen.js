@@ -1,6 +1,9 @@
 import { useContext, useState, useEffect } from "react";
-import { Image, StyleSheet, TouchableOpacity, View, FlatList, SafeAreaView } from "react-native";
+import { Image, StyleSheet, TouchableOpacity, View, FlatList, SafeAreaView, ScrollView, TextInput } from "react-native";
+import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
+import Icon from '@expo/vector-icons/Ionicons';
+import { Picker } from '@react-native-picker/picker';
 import { AuthContext } from '../context/AuthContext';
 import { getUserReferralData } from '../services/referralService';
 import { useThemeColor } from '../../hooks/use-theme-color';
@@ -17,14 +20,21 @@ export default function ProfileScreen(props) {
   const [userPosts, setUserPosts] = useState([]);
   const [postsLoading, setPostsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('posts');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    contentType: 'All',
+    dateRange: 'All',
+    myPosts: false,
+  });
 
-  // Theme colors
-  const backgroundColor = useThemeColor({}, 'background');
-  const cardColor = useThemeColor({}, 'card');
-  const textColor = useThemeColor({}, 'text');
-  const accentColor = useThemeColor({}, 'accent');
-
-  const dynamicStyles = getDynamicStyles(backgroundColor, cardColor, textColor, accentColor);
+  // Stories data (mock)
+  const stories = [
+    { id: '1', user: '@willsamrick', image: 'https://randomuser.me/api/portraits/men/1.jpg' },
+    { id: '2', user: '@frankvecchie', image: 'https://randomuser.me/api/portraits/men/2.jpg' },
+    { id: '3', user: '@mattbraun', image: 'https://randomuser.me/api/portraits/men/3.jpg' },
+    { id: '4', user: '@brendengroess', image: 'https://randomuser.me/api/portraits/men/4.jpg' },
+  ];
 
   const profileUser = route.params?.user || user;
   const isOwnProfile = !route.params?.user;

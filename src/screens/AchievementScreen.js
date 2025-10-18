@@ -20,9 +20,13 @@ const mockAchievements = [
     title: 'Won $20 Blackjack Dare',
     reward: '+15',
     rewardColor: '#00D4AA',
-    avatars: [null, null, null], // Placeholder avatars
-    proofImage: 'https://via.placeholder.com/200x100?text=Blackjack+Proof',
+    user1: '@willsamrick',
+    user2: '@frankvecchie',
+    avatars: ['https://randomuser.me/api/portraits/men/1.jpg', 'https://randomuser.me/api/portraits/men/2.jpg'],
+    icons: ['○ 25', '✖', '...', '○ 25'],
     timestamp: '03:08 PM EDT, Oct 17, 2025',
+    result: 'Won',
+    action: 'Post',
     type: 'win'
   },
   {
@@ -30,9 +34,13 @@ const mockAchievements = [
     title: 'Lost $5 Dice Roll',
     reward: '-5',
     rewardColor: '#FF6666',
-    avatars: [null, null, null], // Placeholder avatars
-    proofImage: 'https://via.placeholder.com/200x100?text=Dice+Proof',
+    user1: '@willsamrick',
+    user2: '@brendengroess',
+    avatars: ['https://randomuser.me/api/portraits/men/1.jpg', 'https://randomuser.me/api/portraits/men/4.jpg'],
+    icons: ['▶', '...', '✖', '▶'],
     timestamp: '02:15 PM EDT, Oct 17, 2025',
+    result: 'Lost',
+    action: 'Add Proof',
     type: 'loss'
   },
   {
@@ -40,9 +48,13 @@ const mockAchievements = [
     title: 'Won $10 Rock Paper Scissors',
     reward: '+20',
     rewardColor: '#00D4AA',
-    avatars: [null, null, null], // Placeholder avatars
-    proofImage: 'https://via.placeholder.com/200x100?text=RPS+Proof',
+    user1: '@willsamrick',
+    user2: '@mattbraun',
+    avatars: ['https://randomuser.me/api/portraits/men/1.jpg', 'https://randomuser.me/api/portraits/men/3.jpg'],
+    icons: ['▶', '...', '✖', '▶'],
     timestamp: '01:30 PM EDT, Oct 17, 2025',
+    result: 'Won',
+    action: 'Post',
     type: 'win'
   },
 ];
@@ -69,31 +81,33 @@ export default function AchievementScreen({ navigation }) {
   };
 
   const renderAchievementCard = ({ item }) => (
-    <View style={dynamicStyles.card}>
+    <View style={[dynamicStyles.dareCard, { borderColor: item.rewardColor }]}>
       {/* Title */}
-      <ThemedText style={dynamicStyles.cardTitle}>{item.title}</ThemedText>
+      <ThemedText style={dynamicStyles.dareTitle}>{item.title}</ThemedText>
 
-      {/* Avatars */}
-      <View style={dynamicStyles.avatarContainer}>
+      {/* User Row */}
+      <View style={dynamicStyles.userRow}>
+        <ThemedText style={dynamicStyles.username}>{item.user1}</ThemedText>
         {item.avatars.map((avatar, index) => (
-          <View key={index} style={[dynamicStyles.avatar, { backgroundColor: accentColor }]} />
+          <Image key={index} source={{ uri: avatar }} style={dynamicStyles.avatar} />
+        ))}
+        <ThemedText style={dynamicStyles.username}>{item.user2}</ThemedText>
+      </View>
+
+      {/* Icons Row */}
+      <View style={dynamicStyles.iconsRow}>
+        {item.icons.map((icon, index) => (
+          <ThemedText key={index} style={dynamicStyles.icon}>{icon}</ThemedText>
         ))}
       </View>
 
-      {/* Reward Circle */}
-      <View style={[dynamicStyles.rewardCircle, { backgroundColor: item.rewardColor }]}>
-        <ThemedText style={dynamicStyles.rewardText}>{item.reward}</ThemedText>
-      </View>
+      {/* Result */}
+      <ThemedText style={[dynamicStyles.result, { color: item.rewardColor === '#00D4AA' ? '#00D4AA' : '#FF6666' }]}>{item.result}</ThemedText>
 
-      {/* Proof Image */}
-      <Image
-        source={{ uri: item.proofImage }}
-        style={dynamicStyles.proofImage}
-        resizeMode="cover"
-      />
-
-      {/* Timestamp */}
-      <ThemedText style={dynamicStyles.timestamp}>{item.timestamp}</ThemedText>
+      {/* Action Button */}
+      <TouchableOpacity style={dynamicStyles.actionButton}>
+        <ThemedText style={dynamicStyles.actionText}>{item.action}</ThemedText>
+      </TouchableOpacity>
     </View>
   );
 
@@ -138,7 +152,7 @@ export default function AchievementScreen({ navigation }) {
 const getDynamicStyles = (backgroundColor, cardColor, textColor, accentColor, borderColor) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: backgroundColor,
+    backgroundColor: '#000000',
   },
   header: {
     backgroundColor: '#222222',
@@ -172,58 +186,71 @@ const getDynamicStyles = (backgroundColor, cardColor, textColor, accentColor, bo
   cardsList: {
     paddingBottom: 80, // Space for footer
   },
-  card: {
-    backgroundColor: '#222222',
-    borderRadius: 10,
+  // Dare Card styles (matching ActivityFeed)
+  dareCard: {
+    backgroundColor: '#1a1a1a',
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 16,
     borderWidth: 1,
     borderColor: '#333333',
-    padding: 16,
-    marginBottom: 12,
-    width: '100%',
+    shadowColor: '#00D4AA',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  cardTitle: {
-    fontSize: 16,
-    color: 'white',
+  dareTitle: {
+    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: '600',
     marginBottom: 12,
-    fontFamily: 'Montserrat-Medium',
+    lineHeight: 22,
   },
-  avatarContainer: {
+  userRow: {
     flexDirection: 'row',
-    marginBottom: 12,
-  },
-  avatar: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    marginRight: 8,
-    borderWidth: 2,
-    borderColor: accentColor,
-  },
-  rewardCircle: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    justifyContent: 'center',
     alignItems: 'center',
-    position: 'absolute',
-    right: 16,
-    top: 16,
+    justifyContent: 'space-between',
+    marginVertical: 12
   },
-  rewardText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: 'black',
+  username: { color: '#CCCCCC', fontSize: 14, fontWeight: '500' },
+  avatar: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: 2,
+    borderColor: '#00D4AA',
   },
-  proofImage: {
-    width: '100%',
-    height: 80,
-    borderRadius: 8,
-    marginBottom: 12,
+  iconsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginVertical: 14,
+    backgroundColor: '#111111',
+    borderRadius: 10,
+    padding: 12,
   },
-  timestamp: {
-    fontSize: 12,
-    color: '#CCCCCC',
-    textAlign: 'left',
+  icon: { color: '#FFFFFF', fontSize: 16, fontWeight: '500' },
+  result: { fontSize: 16, fontWeight: 'bold', textAlign: 'center', marginTop: 12 },
+  actionButton: {
+    backgroundColor: '#00D4AA',
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    marginTop: 12,
+    alignSelf: 'center',
+    minWidth: 110,
+    shadowColor: '#00D4AA',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 5,
+  },
+  actionText: {
+    color: '#000000',
+    textAlign: 'center',
+    fontWeight: '700',
+    fontSize: 14,
+    letterSpacing: 0.5,
   },
   footer: {
     backgroundColor: '#222222',
