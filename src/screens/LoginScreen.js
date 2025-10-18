@@ -60,14 +60,14 @@ export default function LoginScreen({ navigation }) {
     <ThemedView style={{ flex: 1, justifyContent: "center", padding: 20 }}>
       <Text style={dynamicStyles.title}>Abstrac</Text>
       <TextInput
-        placeholder="Email (use test@test.com for mock login)"
+        placeholder="Email"
         placeholderTextColor={borderColor}
         style={dynamicStyles.input}
         value={email}
         onChangeText={setEmail}
       />
       <TextInput
-        placeholder="Password (use test123 for mock login)"
+        placeholder="Password"
         placeholderTextColor={borderColor}
         secureTextEntry
         style={dynamicStyles.input}
