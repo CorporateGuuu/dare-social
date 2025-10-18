@@ -13,6 +13,20 @@
           "order": "DESCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "friend_stats",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "pair_ids",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "total_dares",
+          "order": "DESCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": []

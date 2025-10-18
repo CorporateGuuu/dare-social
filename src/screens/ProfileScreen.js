@@ -89,6 +89,43 @@ export default function ProfileScreen(props) {
         <ThemedText style={dynamicStyles.name}>{profileUser.username || '@you'}</ThemedText>
         <ThemedText style={dynamicStyles.meta}>Stone: {profileUser.stones} 🪨  •  Level: {profileUser.level}  •  Streak: {profileUser.currentStreak}  •  Completed: {profileUser.totalDaresCompleted}</ThemedText>
 
+        {/* Statistics Section */}
+        <ThemedView style={dynamicStyles.statsBlock}>
+          <ThemedText style={dynamicStyles.statsTitle}>Statistics</ThemedText>
+          <View style={dynamicStyles.statsGrid}>
+            <View style={dynamicStyles.statItem}>
+              <ThemedText style={dynamicStyles.statValue}>{profileUser.wins || 0}</ThemedText>
+              <ThemedText style={dynamicStyles.statLabel}>Wins</ThemedText>
+            </View>
+            <View style={dynamicStyles.statItem}>
+              <ThemedText style={dynamicStyles.statValue}>{profileUser.losses || 0}</ThemedText>
+              <ThemedText style={dynamicStyles.statLabel}>Losses</ThemedText>
+            </View>
+            <View style={dynamicStyles.statItem}>
+              <ThemedText style={dynamicStyles.statValue}>{profileUser.rank || 'N/A'}</ThemedText>
+              <ThemedText style={dynamicStyles.statLabel}>Rank</ThemedText>
+            </View>
+          </View>
+          <View style={dynamicStyles.statsRow}>
+            <ThemedText style={dynamicStyles.winRateText}>
+              Win Rate: {profileUser.wins !== undefined && profileUser.losses !== undefined ?
+                Math.round((profileUser.wins / (profileUser.wins + profileUser.losses)) * 100) : 'N/A'}%
+            </ThemedText>
+          </View>
+          <View style={dynamicStyles.statsRow}>
+            <ThemedText style={dynamicStyles.stonesSummary}>
+              Stones Earned: {profileUser.stones_earned || 0} 🪨 • Stones Spent: {profileUser.stones_spent || 0} 🪨
+            </ThemedText>
+          </View>
+          {(profileUser.mutuals && profileUser.mutuals.length > 0) && (
+            <View style={dynamicStyles.statsRow}>
+              <ThemedText style={dynamicStyles.mutualsText}>
+                Mutuals: {profileUser.mutuals.length} followers
+              </ThemedText>
+            </View>
+          )}
+        </ThemedView>
+
         {!isOwnProfile && (
           <View style={dynamicStyles.actionButtons}>
             <Pressable
@@ -275,4 +312,14 @@ const getDynamicStyles = (backgroundColor, cardColor, textColor, accentColor) =>
   settingItemLast: { borderBottomWidth: 0 },
   settingIcon: { fontSize: 20, marginRight: 12, color: accentColor },
   settingText: { flex: 1, fontSize: 16 },
+  statsBlock: { alignSelf: "stretch", backgroundColor: cardColor, borderRadius: 12, padding: 12, marginBottom: 12 },
+  statsTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 12 },
+  statsGrid: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 12 },
+  statItem: { alignItems: 'center' },
+  statValue: { fontSize: 24, fontWeight: 'bold', color: accentColor },
+  statLabel: { fontSize: 12, color: '#888', marginTop: 4 },
+  statsRow: { marginBottom: 8 },
+  stonesSummary: { fontSize: 14, textAlign: 'center' },
+  mutualsText: { fontSize: 14, textAlign: 'center', color: '#666' },
+  winRateText: { fontSize: 16, textAlign: 'center', fontWeight: 'bold', color: accentColor },
 });

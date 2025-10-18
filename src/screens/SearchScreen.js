@@ -23,6 +23,7 @@ const AVAILABLE_SCREENS = [
   { name: 'Tracker', label: 'Tracker', description: 'Track your progress' },
   { name: 'CreateChallengeForm', label: 'Create Challenge Form', description: 'Form for creating challenges' },
   { name: 'Login', label: 'Login', description: 'Login screen' },
+  { name: 'Posts', label: 'Posts', description: 'Create and view posts' },
   { name: 'Onboarding', label: 'Onboarding', description: 'Get started' },
 ];
 

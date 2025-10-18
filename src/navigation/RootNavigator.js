@@ -4,6 +4,8 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
+import { TouchableOpacity, View } from 'react-native';
+
 // Screens
 import AchievementsScreen from '../screens/AchievementsScreen';
 import ActivityFeedScreen from '../screens/ActivityFeedScreen';
@@ -37,6 +39,20 @@ import HelpSupportScreen from '../screens/HelpSupportScreen';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
+// Create header component with search and frames buttons
+function HeaderRight({ navigation }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingRight: 10 }}>
+      <TouchableOpacity onPress={() => navigation.navigate('Search')}>
+        <Icon name="search" size={24} color="#ffffff" />
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => navigation.navigate('Frame_Market')}>
+        <MaterialIcons name="filter-frames" size={24} color="#ffffff" />
+      </TouchableOpacity>
+    </View>
+  );
+}
+
 function MainTabs() {
   return (
     <Tab.Navigator
@@ -45,9 +61,6 @@ function MainTabs() {
         tabBarIcon: ({ focused, color, size }) => {
           if (route.name === 'Home') {
             return <MaterialIcons name="home" size={size ?? 20} color={color ?? "#cccccc"} />;
-          }
-          if (route.name === 'Posts') {
-            return <Icon name={focused ? 'create' : 'create-outline'} size={size ?? 20} color={color ?? "#cccccc"} />;
           }
           if (route.name === 'Challenges') {
             return <MaterialIcons name="whatshot" size={size ?? 20} color={color ?? "#cccccc"} />;
@@ -70,7 +83,6 @@ function MainTabs() {
       })}
     >
       <Tab.Screen name="Home" component={HomeFeedScreen} options={{ tabBarLabel: "Home" }} />
-      <Tab.Screen name="Posts" component={PostsScreen} options={{ tabBarLabel: "Posts" }} />
       <Tab.Screen name="Challenges" component={ChallengesScreen} options={{ tabBarLabel: "Challenges" }} />
       <Tab.Screen name="Messages" component={ChatListScreen} options={{ tabBarLabel: "Messages" }} />
       <Tab.Screen name="Profile" component={ProfileScreen} options={{ tabBarLabel: "Profile" }} />
@@ -83,29 +95,30 @@ const RootNavigator = ({ user }) => {
     <Stack.Navigator initialRouteName={user ? "Main" : "Onboarding"}>
       <Stack.Screen name="Onboarding" component={OnboardingScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Main" component={MainTabs} options={{ headerShown: false }} />
-      <Stack.Screen name="DareDetails" component={DareDetailsScreen} />
-      <Stack.Screen name="CompleteDare" component={CompleteDareScreen} />
-      <Stack.Screen name="Challenges" component={ChallengesScreen} />
-      <Stack.Screen name="CreateChallenge" component={Create_Challenge_Home} />
-      <Stack.Screen name="ChatList" component={ChatListScreen} />
-      <Stack.Screen name="Chat" component={ChatScreen} />
-      <Stack.Screen name="VoteScreen" component={VoteScreen} />
-      <Stack.Screen name="Frame_Market" component={Frame_Market} />
-      <Stack.Screen name="AchievementsScreen" component={AchievementsScreen} />
-      <Stack.Screen name="WinnerScreen" component={WinnerScreen} />
-      <Stack.Screen name="LoginScreen" component={LoginScreen} />
-      <Stack.Screen name="Register" component={RegisterScreen} />
-      <Stack.Screen name="CreateChallengeForm" component={CreateChallengeFormScreen} />
-      <Stack.Screen name="Tracker" component={TrackerScreen} />
-      <Stack.Screen name="Posts" component={PostsScreen} />
-      <Stack.Screen name="Referrals" component={ReferralScreen} />
-      <Stack.Screen name="ActivityFeed" component={ActivityFeedScreen} />
-      <Stack.Screen name="Wallet" component={WalletScreen} />
-      <Stack.Screen name="EditProfile" component={EditProfileScreen} />
-      <Stack.Screen name="Notifications" component={NotificationsScreen} />
-      <Stack.Screen name="Privacy" component={PrivacySecurityScreen} />
-      <Stack.Screen name="Help" component={HelpSupportScreen} />
-      <Stack.Screen name="MyDares" component={PlaceholderScreen} />
+      <Stack.Screen name="Search" component={SearchScreen} options={{ headerShown: true, headerRight: HeaderRight }} />
+      <Stack.Screen name="DareDetails" component={DareDetailsScreen} options={{ headerShown: true, headerRight: HeaderRight, headerStyle: { backgroundColor: '#000000' }, headerTintColor: '#ffffff' }} />
+      <Stack.Screen name="CompleteDare" component={CompleteDareScreen} options={{ headerShown: true, headerRight: HeaderRight, headerStyle: { backgroundColor: '#000000' }, headerTintColor: '#ffffff' }} />
+      <Stack.Screen name="Challenges" component={ChallengesScreen} options={{ headerShown: true, headerRight: HeaderRight, headerStyle: { backgroundColor: '#000000' }, headerTintColor: '#ffffff' }} />
+      <Stack.Screen name="CreateChallenge" component={Create_Challenge_Home} options={{ headerShown: true, headerRight: HeaderRight, headerStyle: { backgroundColor: '#000000' }, headerTintColor: '#ffffff' }} />
+      <Stack.Screen name="ChatList" component={ChatListScreen} options={{ headerShown: true, headerRight: HeaderRight, headerStyle: { backgroundColor: '#000000' }, headerTintColor: '#ffffff' }} />
+      <Stack.Screen name="Chat" component={ChatScreen} options={{ headerShown: true, headerRight: HeaderRight, headerStyle: { backgroundColor: '#000000' }, headerTintColor: '#ffffff' }} />
+      <Stack.Screen name="VoteScreen" component={VoteScreen} options={{ headerShown: true, headerRight: HeaderRight, headerStyle: { backgroundColor: '#000000' }, headerTintColor: '#ffffff' }} />
+      <Stack.Screen name="Frame_Market" component={Frame_Market} options={{ headerShown: true, headerRight: HeaderRight, headerStyle: { backgroundColor: '#000000' }, headerTintColor: '#ffffff' }} />
+      <Stack.Screen name="AchievementsScreen" component={AchievementsScreen} options={{ headerShown: true, headerRight: HeaderRight, headerStyle: { backgroundColor: '#000000' }, headerTintColor: '#ffffff' }} />
+      <Stack.Screen name="WinnerScreen" component={WinnerScreen} options={{ headerShown: true, headerRight: HeaderRight, headerStyle: { backgroundColor: '#000000' }, headerTintColor: '#ffffff' }} />
+      <Stack.Screen name="LoginScreen" component={LoginScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="CreateChallengeForm" component={CreateChallengeFormScreen} options={{ headerShown: true, headerRight: HeaderRight, headerStyle: { backgroundColor: '#000000' }, headerTintColor: '#ffffff' }} />
+      <Stack.Screen name="Tracker" component={TrackerScreen} options={{ headerShown: true, headerRight: HeaderRight, headerStyle: { backgroundColor: '#000000' }, headerTintColor: '#ffffff' }} />
+      <Stack.Screen name="Posts" component={PostsScreen} options={{ headerShown: true, headerRight: HeaderRight, headerStyle: { backgroundColor: '#000000' }, headerTintColor: '#ffffff' }} />
+      <Stack.Screen name="Referrals" component={ReferralScreen} options={{ headerShown: true, headerRight: HeaderRight, headerStyle: { backgroundColor: '#000000' }, headerTintColor: '#ffffff' }} />
+      <Stack.Screen name="ActivityFeed" component={ActivityFeedScreen} options={{ headerShown: true, headerRight: HeaderRight, headerStyle: { backgroundColor: '#000000' }, headerTintColor: '#ffffff' }} />
+      <Stack.Screen name="Wallet" component={WalletScreen} options={{ headerShown: true, headerRight: HeaderRight, headerStyle: { backgroundColor: '#000000' }, headerTintColor: '#ffffff' }} />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: true, headerRight: HeaderRight, headerStyle: { backgroundColor: '#000000' }, headerTintColor: '#ffffff' }} />
+      <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ headerShown: true, headerRight: HeaderRight, headerStyle: { backgroundColor: '#000000' }, headerTintColor: '#ffffff' }} />
+      <Stack.Screen name="Privacy" component={PrivacySecurityScreen} options={{ headerShown: true, headerRight: HeaderRight, headerStyle: { backgroundColor: '#000000' }, headerTintColor: '#ffffff' }} />
+      <Stack.Screen name="Help" component={HelpSupportScreen} options={{ headerShown: true, headerRight: HeaderRight, headerStyle: { backgroundColor: '#000000' }, headerTintColor: '#ffffff' }} />
+      <Stack.Screen name="MyDares" component={PlaceholderScreen} options={{ headerShown: true, headerRight: HeaderRight, headerStyle: { backgroundColor: '#000000' }, headerTintColor: '#ffffff' }} />
     </Stack.Navigator>
   );
 };
