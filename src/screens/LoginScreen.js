@@ -58,7 +58,7 @@ export default function LoginScreen({ navigation }) {
 
   return (
     <ThemedView style={{ flex: 1, justifyContent: "center", padding: 20 }}>
-      <Text style={dynamicStyles.title}>Dare Social</Text>
+      <Text style={dynamicStyles.title}>Abstrac</Text>
       <TextInput
         placeholder="Email (use test@test.com for mock login)"
         placeholderTextColor={borderColor}
@@ -75,6 +75,9 @@ export default function LoginScreen({ navigation }) {
         onChangeText={setPassword}
       />
       <Button title="Login" onPress={handleLogin} />
+      <Text onPress={() => Alert.alert("Reset Password", "Password reset functionality coming soon!")} style={dynamicStyles.forgotPassword}>
+        Forgot Password?
+      </Text>
       <Text onPress={() => navigation.navigate("Register")} style={dynamicStyles.link}>
         Create an account
       </Text>
@@ -93,5 +96,6 @@ const createStyles = (backgroundColor, textColor, borderColor, accentColor) => S
     backgroundColor: Array.isArray(backgroundColor) ? backgroundColor[0] : backgroundColor,
     color: textColor
   },
-  link: { textAlign: "center", marginTop: 10, color: accentColor }
+  link: { textAlign: "center", marginTop: 10, color: accentColor },
+  forgotPassword: { textAlign: "center", marginTop: 10, color: borderColor, fontSize: 14 }
 });
