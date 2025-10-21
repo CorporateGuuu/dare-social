@@ -177,4 +177,52 @@ export const deletePost = USE_MOCK
       return await httpsCallable(functions, "deletePost")(postId);
     };
 
+// Get posts by user ID
+const mockGetUserPosts = async (userId) => {
+  await delay(400);
+  console.log("Mock getUserPosts called with userId:", userId);
+
+  // Filter posts by authorId in mock data
+  const userPosts = [
+    {
+      id: "mock-post-1",
+      authorId: userId,
+      type: "image",
+      content: "",
+      image: "https://picsum.photos/400/400?random=1",
+      caption: "My first dare completed! 🚀",
+      tags: ["dare", "challenge"],
+      visibility: "public",
+      createdAt: new Date().toISOString(),
+      engagement: { likes: 8, comments: 3, shares: 2, views: 120 },
+    },
+    {
+      id: "mock-post-2",
+      authorId: userId,
+      type: "image",
+      content: "",
+      image: "https://picsum.photos/400/400?random=2",
+      caption: "Sunday run completed! 🏃‍♂️",
+      tags: ["fitness", "running"],
+      visibility: "friends",
+      createdAt: new Date(Date.now() - 86400000).toISOString(),
+      engagement: { likes: 15, comments: 5, shares: 1, views: 200 },
+    }
+  ];
+
+  return {
+    data: {
+      success: true,
+      posts: userPosts.filter(post => post.authorId === userId),
+      message: "User posts fetched successfully (mock)"
+    }
+  };
+};
+
+export const getUserPosts = USE_MOCK
+  ? mockGetUserPosts
+  : async (userId) => {
+      return await httpsCallable(functions, "getUserPosts")(userId);
+    };
+
 export { createPost as default };

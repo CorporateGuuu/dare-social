@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, FlatList, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import PlaceholderCard from "../components/PlaceholderCard";
-import { searchUsers } from "../lib/firebase";
 import { useThemeColor } from "../../hooks/use-theme-color";
 import { ThemedView } from "../../components/themed-view";
 import { ThemedText } from "../../components/themed-text";
@@ -17,8 +16,6 @@ export default function HomeFeedScreen({ navigation }) {
 
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [query, setQuery] = useState("");
-  const [users, setUsers] = useState([]);
 
   // Placeholder rarity (1-5), should come from dare data
   const getRarity = (dareId) => 3; // Replace with actual
@@ -49,21 +46,6 @@ export default function HomeFeedScreen({ navigation }) {
     }
     fetchPosts();
   }, []);
-
-
-
-  const handleSearch = async () => {
-    if (query.length > 0) {
-      try {
-        const res = await searchUsers({ query });
-        setUsers(res.data);
-      } catch (e) {
-        console.error("Failed to search users:", e);
-      }
-    } else {
-      setUsers([]);
-    }
-  };
 
   const bestFriends = [
     { username: '@frankvecchie', avatar: 'https://example.com/frank.jpg', record: '10-5', stonesDiff: '+150 🪨' },
@@ -125,25 +107,7 @@ export default function HomeFeedScreen({ navigation }) {
           </View>
         </ThemedView>
       </ThemedView>
-      <TextInput
-        style={dynamicStyles.searchBar}
-        placeholder="Search users"
-        placeholderTextColor={textColor}
-        value={query}
-        onChangeText={setQuery}
-        onSubmitEditing={handleSearch}
-      />
-      {users.length > 0 && (
-        <FlatList
-          data={users}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <TouchableOpacity onPress={() => navigation.navigate("Profile", { user: item })}>
-              <PlaceholderCard title={item.username} subtitle="User found" />
-            </TouchableOpacity>
-          )}
-        />
-      )}
+
       <FlatList
         data={posts}
         keyExtractor={(item) => item.id}

@@ -1,4 +1,3 @@
-import { act, renderHook } from '@testing-library/react-native';
 import { getBet } from '../../lib/firebase.js';
 
 jest.mock('../../lib/firebase.js', () => ({

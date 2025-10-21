@@ -56,7 +56,16 @@ export const castVote = httpsCallable(functions, "castVote");
 export const completeDare = httpsCallable(functions, "completeDare");
 export const updateStoneBalance = httpsCallable(functions, "updateStoneBalance");
 export const updateDailyStreak = httpsCallable(functions, "updateDailyStreak");
-export const searchUsers = httpsCallable(functions, "searchUsers");
+const mockSearchUsers = async ({ query }) => {
+  await delay(300);
+  return {
+    data: [
+      { username: query, stoneBalance: 500, uid: 'mock-uid' },
+    ]
+  };
+};
+
+export const searchUsers = USE_MOCK ? mockSearchUsers : httpsCallable(functions, "searchUsers");
 export const getFrequentChallengers = httpsCallable(functions, "getFrequentChallengers");
 
 // Mock response for getBet

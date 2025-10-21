@@ -37,7 +37,7 @@ const CreateChallengeFormScreen = ({ isVisible, onClose }) => {
           );
           return;
         }
-      } catch (error) {
+      } catch (_error) {
         Alert.alert("Error", "Unable to verify opponent funds. Please try again.");
         return;
       }
