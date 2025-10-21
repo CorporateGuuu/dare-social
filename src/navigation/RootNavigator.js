@@ -2,27 +2,31 @@ import Icon from '@expo/vector-icons/Ionicons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-import { TouchableOpacity, View } from 'react-native';
+import { View } from 'react-native';
 
 // Screens
-import AchievementsScreen from '../screens/AchievementsScreen';
 import AchievementScreen from '../screens/AchievementScreen';
+import AchievementsScreen from '../screens/AchievementsScreen';
 import ActivityFeedScreen from '../screens/ActivityFeedScreen';
 import ChallengesScreen from '../screens/ChallengesScreen';
-import PlaceholderScreen from '../screens/PlaceholderScreen';
 import ChatListScreen from '../screens/ChatListScreen';
 import ChatScreen from '../screens/ChatScreen';
 import CompleteDareScreen from '../screens/CompleteDareScreen';
 import CreateChallengeFormScreen from '../screens/CreateChallengeFormScreen';
 import Create_Challenge_Home from '../screens/CreateChallengeScreen';
 import DareDetailsScreen from '../screens/DareDetailsScreen';
+import EditProfileScreen from '../screens/EditProfileScreen';
 import Frame_Market from '../screens/FrameMarketScreen';
+import HelpSupportScreen from '../screens/HelpSupportScreen';
 import LoginScreen from '../screens/LoginScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
+import PlaceholderScreen from '../screens/PlaceholderScreen';
 import PostsScreen from '../screens/PostsScreen';
+import PrivacySecurityScreen from '../screens/PrivacySecurityScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import ReferralScreen from '../screens/ReferralScreen';
 import RegisterScreen from '../screens/RegisterScreen';
@@ -31,10 +35,6 @@ import TrackerScreen from '../screens/TrackerScreen';
 import VoteScreen from '../screens/VoteScreen';
 import WalletScreen from '../screens/WalletScreen';
 import WinnerScreen from '../screens/WinnerScreen';
-import EditProfileScreen from '../screens/EditProfileScreen';
-import NotificationsScreen from '../screens/NotificationsScreen';
-import PrivacySecurityScreen from '../screens/PrivacySecurityScreen';
-import HelpSupportScreen from '../screens/HelpSupportScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -90,7 +90,12 @@ function MainTabs() {
   );
 }
 
-const RootNavigator = ({ user }) => {
+const RootNavigator = ({ user, isLoading }) => {
+  if (isLoading) {
+    return null;
+  }
+
+  console.log("User:", user, "isLoading:", isLoading)
   console.log(user ? "Main" : "LoginScreen")
   return (
     <Stack.Navigator initialRouteName={user ? "Main" : "LoginScreen"}>
