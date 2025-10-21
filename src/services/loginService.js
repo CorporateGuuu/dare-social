@@ -1,8 +1,9 @@
-import { doc, updateDoc, collection, addDoc, getDoc, runTransaction, getDocs } from 'firebase/firestore';
+import { addDoc, collection, doc, getDoc, getDocs, runTransaction } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
 export const trackUserLogin = async (userId) => {
   try {
+    console.log('Tracking user login for user:', userId)
     const userRef = doc(db, 'users', userId);
     const now = new Date();
 

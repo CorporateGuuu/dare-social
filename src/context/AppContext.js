@@ -1,90 +1,82 @@
-import React, { useContext, useState, useEffect } from "react";
+import { doc, onSnapshot } from 'firebase/firestore';
+import React, { useContext, useEffect, useState } from "react";
+import { firestore } from "../config/firebase";
+import { generateReferralCode } from "../services/referralService";
 import { AuthContext } from "./AuthContext";
-import { getUserReferralData, generateReferralCode } from "../services/referralService";
-import { database, db } from "../config/firebase";
-import { onValue, ref, update } from 'firebase/database';
-import { onSnapshot, doc } from 'firebase/firestore';
 
 const AppContext = React.createContext();
 
 const AppProvider = ({ children }) => {
   const { user } = useContext(AuthContext);
-  const [userData, setUserData] = useState({
-    stones: 0,
-    transactions: [],
-    referrals: { code: null, sent: 0, successful: 0 },
-    loginStreak: { currentStreak: 0, maxStreak: 0, totalLogins: 0 },
-    postStats: { totalPosts: 0, rewardedPosts: 0, totalPostEarnings: 0, dailyPostCount: 0 },
-  });
-
   const [postStats, setPostStats] = useState({
     totalPosts: 0,
     rewardedPosts: 0,
     totalPostEarnings: 0,
     dailyPostCount: 0,
   });
-
-  // Sync user data with Firebase Realtime Database
-  useEffect(() => {
-    if (user?.id) {
-      const userRef = ref(database, `users/${user.id}`);
-
-      const unsubscribe = onValue(userRef, (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-          setUserData(prev => ({
-            ...prev,
-            stones: data.stonesBalance || 0,
-            transactions: data.transactions || [],
-            referrals: data.referrals || { code: null, sent: 0, successful: 0 },
-            loginStreak: data.loginStreak || { currentStreak: 0, maxStreak: 0, totalLogins: 0 },
-          }));
-        }
-      });
-
-      return () => unsubscribe();
+  const [referralData, setReferralData] = useState({
+    code: null,
+    referrals: {
+      totalReferrals: 0,
+      totalReferralEarnings: 0,
     }
-  }, [user?.id]);
+  });
 
   // Listen to post stats with error handling
   useEffect(() => {
     if (user?.id) {
-      const unsubscribe = onSnapshot(doc(db, 'users', user.id), (doc) => {
-        const data = doc.data();
+
+      const unsubscribe = onSnapshot(doc(firestore, 'users', user.id), (snapshot) => {
+        const data = snapshot.data();
         if (data?.postStats) {
-          setPostStats(data.postStats);
+          setPostStats(data.postStats)
         }
       }, (error) => {
-        if (error.code === 'permission-denied') {
+        if(error.code === 'permission-denied') {
           console.warn('Could not access user post stats (likely anonymous user):', error.message);
           // Proceed without post stats for anonymous users
         } else {
           console.error('Error fetching post stats:', error);
         }
-      });
-      return unsubscribe;
+      }
+    );
+      return () => unsubscribe();
     }
   }, [user?.id]);
 
   // Update user data (triggers Cloud Function)
   const updateUserData = (updates) => {
     if (user?.id) {
-      update(ref(database, `users/${user.id}`), updates);
+      console.log("TODO: Update user data using cloud function with updates:", updates);
+
+      if (updates?.referrals) {
+        setReferralData(prev => ({
+          ...prev,
+          referrals: {
+            ...prev.referrals,
+            ...updates.referrals
+          }
+        }));
+      }
     }
   };
 
   const fetchUserReferrals = async () => {
+    if (!user?.id) return;
+    
     try {
-      const referralData = await getUserReferralData();
-      setUserData(prev => ({
-        ...prev,
-        referrals: {
-          ...prev.referrals,
-          ...referralData
-        }
-      }));
+      // Mock data for development
+      const mockReferralData = {
+        code: user.id.slice(0, 8).toUpperCase(), // Generate a simple code from user ID
+        sent: 0,
+        successful: 0
+      };
+      
+      setReferralData(mockReferralData);
+      return mockReferralData;
     } catch (error) {
-      console.error('Error fetching referral data:', error);
+      console.error('Error in fetchUserReferrals:', error);
+      return null;
     }
   };
 
@@ -96,15 +88,14 @@ const AppProvider = ({ children }) => {
 
   return (
     <AppContext.Provider value={{
-      ...userData,
       postStats,
-      setUserData: updateUserData,
+      setPostStats,
       generateReferralCode,
       processReferralReward,
       fetchUserReferrals,
       // Keep legacy referral methods for compatibility
-      referrals: userData.referrals,
-      setReferrals: (updates) => setUserData(prev => ({
+      referrals: referralData.referrals,
+      setReferrals: (updates) => setReferralData(prev => ({
         ...prev,
         referrals: { ...prev.referrals, ...updates }
       }))

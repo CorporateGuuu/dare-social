@@ -95,8 +95,6 @@ const RootNavigator = ({ user, isLoading }) => {
     return null;
   }
 
-  console.log("User:", user, "isLoading:", isLoading)
-  console.log(user ? "Main" : "LoginScreen")
   return (
     <Stack.Navigator initialRouteName={user ? "Main" : "LoginScreen"}>
       <Stack.Screen name="Onboarding" component={OnboardingScreen} options={{ headerShown: false }} />
