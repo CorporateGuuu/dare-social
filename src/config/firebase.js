@@ -28,7 +28,6 @@ try {
   console.warn('Auth already initialized:', error);
   auth = getAuth(app);
 }
-console.log(auth)
 export { auth };
 
 export const firestore = getFirestore(app);

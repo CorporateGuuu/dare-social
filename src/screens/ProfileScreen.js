@@ -1,17 +1,14 @@
-import { useContext, useState, useEffect } from "react";
-import { Image, StyleSheet, TouchableOpacity, View, FlatList, SafeAreaView, ScrollView, TextInput } from "react-native";
-import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
-import Icon from '@expo/vector-icons/Ionicons';
-import { Picker } from '@react-native-picker/picker';
-import { AuthContext } from '../context/AuthContext';
-import { getUserReferralData } from '../services/referralService';
-import { useThemeColor } from '../hooks/use-theme-color';
-import { ThemedView } from '../components/themed-view';
+import { useContext, useEffect, useState } from "react";
+import { FlatList, Image, SafeAreaView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { ThemedText } from '../components/themed-text';
+import { ThemedView } from '../components/themed-view';
+import { AuthContext } from '../context/AuthContext';
+import { useThemeColor } from '../hooks/use-theme-color';
 import { useDares } from '../hooks/useDares';
 import { useUserActivities } from '../hooks/useUserActivities';
 import { getUserPosts } from '../services/postService';
+import { getUserReferralData } from '../services/referralService';
 
 export default function ProfileScreen(props) {
   const { navigation, route } = props;

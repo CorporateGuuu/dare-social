@@ -1,6 +1,6 @@
+import { collection, getDocs, limit, orderBy, query, where } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { collection, query, where, orderBy, limit, getDocs } from "firebase/firestore";
-import { db } from "../config/firebase";
+import { firestore } from "../config/firebase";
 
 /** Hook to fetch user's activities for profile */
 export function useUserActivities(userId, maxItems = 5) {
@@ -17,7 +17,7 @@ export function useUserActivities(userId, maxItems = 5) {
       try {
         setLoading(true);
         const q = query(
-          collection(db, "activities"),
+          collection(firestore, "activities"),
           where("actorId", "==", userId),
           orderBy("createdAt", "desc"),
           limit(maxItems)
