@@ -1,13 +1,15 @@
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useNavigation } from '@react-navigation/native';
-import { useState } from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View, Image, TextInput } from "react-native";
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar';
 import Icon from '@expo/vector-icons/Ionicons';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Picker } from '@react-native-picker/picker';
+import { useNavigation } from '@react-navigation/native';
+import { StatusBar } from 'expo-status-bar';
+import { useContext, useState } from "react";
+import { Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { AuthContext } from '../context/AuthContext';
 
 export default function Frame_Market() {
+  const { user } = useContext(AuthContext);
   const navigation = useNavigation();
   const [selectedSection, setSelectedSection] = useState('dare'); // Start with dare for demo
   const [selectedFrame, setSelectedFrame] = useState({
@@ -25,7 +27,7 @@ export default function Frame_Market() {
     myFrames: false,
   });
 
-  const balance = 500; // Sample stones balance
+  const balance = user.stones; // Sample stones balance
 
   // Stories data (mock)
   const stories = [

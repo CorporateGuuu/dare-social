@@ -1,20 +1,21 @@
-import * as ImagePicker from 'expo-image-picker';
-import * as Notifications from 'expo-notifications';
-import React, { useContext, useEffect, useState } from 'react';
-import { Animated, FlatList, StyleSheet, Text, TouchableOpacity, View, ScrollView, Image, TextInput } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar';
 import Icon from '@expo/vector-icons/Ionicons';
 import { Picker } from '@react-native-picker/picker';
-import { submitProof, tallyVotes } from '../utils/votingUtils';
+import * as ImagePicker from 'expo-image-picker';
+import * as Notifications from 'expo-notifications';
+import { StatusBar } from 'expo-status-bar';
+import React, { useContext, useEffect, useState } from 'react';
+import { Animated, FlatList, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import VotingModal from '../components/VotingModal';
 import { AuthContext } from '../context/AuthContext';
 import { useFadeIn, useSwipeGesture } from '../hooks/useAnimations';
+import { submitProof, tallyVotes } from '../utils/votingUtils';
 
 import { useNavigation } from '@react-navigation/native';
 
 const ChallengeCard = React.memo(({ item, onReject, onAccept }) => {
   const { pan, panHandlers } = useSwipeGesture(onReject, onAccept);
+  const { user } = useContext(AuthContext);
 
   return (
     <Animated.View
@@ -260,7 +261,7 @@ const ChallengesScreen = () => {
         <View style={styles.header}>
           <Text style={styles.logo}>Abstrac</Text>
           <View style={styles.stonesBadge}>
-            <Text style={styles.stonesText}>○ 10</Text>
+            <Text style={styles.stonesText}>○ {user.stones}</Text>
           </View>
         </View>
 

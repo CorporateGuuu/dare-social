@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, ScrollView, RefreshControl, ActivityIndicator, TextInput } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar';
-import { Picker } from '@react-native-picker/picker';
 import Icon from '@expo/vector-icons/Ionicons';
+import { Picker } from '@react-native-picker/picker';
 import { useNavigation } from '@react-navigation/native';
+import { StatusBar } from 'expo-status-bar';
+import { useContext, useState } from 'react';
+import { ActivityIndicator, FlatList, Image, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { AuthContext } from '../context/AuthContext';
 
 const initialDares = [
   { id: '1', title: 'The Kings will be better than the Bulls this season', user1: '@willsamrick', user2: '@frankvecchie', icons: ['○ 25', '✖', '...', '○ 25'], status: 'Pending', borderColor: '#FF0000' },
@@ -64,6 +65,7 @@ const Story = ({ story }) => (
 );
 
 export default function ActivityFeedScreen() {
+  const { user } = useContext(AuthContext);
   const navigation = useNavigation();
   const [feed, setFeed] = useState(initialDares);
   const [refreshing, setRefreshing] = useState(false);
@@ -117,7 +119,7 @@ export default function ActivityFeedScreen() {
         <View style={styles.header}>
           <Text style={styles.logo}>Abstrac</Text>
           <View style={styles.stonesBadge}>
-            <Text style={styles.stonesText}>○ 10</Text>
+            <Text style={styles.stonesText}>○ {user.stones}</Text>
           </View>
         </View>
 
